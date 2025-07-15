@@ -14,7 +14,341 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          id: string
+          is_emergency: boolean | null
+          listener_id: string | null
+          seeker_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["session_status"]
+          topic_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          listener_id?: string | null
+          seeker_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          is_emergency?: boolean | null
+          listener_id?: string | null
+          seeker_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          topic_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_sessions_listener_id_fkey"
+            columns: ["listener_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_seeker_id_fkey"
+            columns: ["seeker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_sessions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_system_message: boolean | null
+          message_type: string | null
+          sender_id: string
+          session_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_system_message?: boolean | null
+          message_type?: string | null
+          sender_id: string
+          session_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_system_message?: boolean | null
+          message_type?: string | null
+          sender_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mood_logs: {
+        Row: {
+          created_at: string
+          emotions: string[] | null
+          id: string
+          mood_score: number
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emotions?: string[] | null
+          id?: string
+          mood_score: number
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emotions?: string[] | null
+          id?: string
+          mood_score?: number
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mood_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_id: string | null
+          bio: string | null
+          created_at: string
+          hourly_rate: number | null
+          id: string
+          is_available: boolean | null
+          is_verified: boolean | null
+          languages: string[] | null
+          nickname: string
+          rating_average: number | null
+          rating_count: number | null
+          role: Database["public"]["Enums"]["user_role"]
+          specializations: string[] | null
+          total_sessions: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_id?: string | null
+          bio?: string | null
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          nickname: string
+          rating_average?: number | null
+          rating_count?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
+          specializations?: string[] | null
+          total_sessions?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_id?: string | null
+          bio?: string | null
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          is_available?: boolean | null
+          is_verified?: boolean | null
+          languages?: string[] | null
+          nickname?: string
+          rating_average?: number | null
+          rating_count?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
+          specializations?: string[] | null
+          total_sessions?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ratings: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          rated_id: string
+          rater_id: string
+          rating: number
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rated_id: string
+          rater_id: string
+          rating: number
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rated_id?: string
+          rater_id?: string
+          rating?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_rated_id_fkey"
+            columns: ["rated_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_resolved: boolean | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_id: string
+          reporter_id: string
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          reason: Database["public"]["Enums"]["report_reason"]
+          reported_id: string
+          reporter_id: string
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          reason?: Database["public"]["Enums"]["report_reason"]
+          reported_id?: string
+          reporter_id?: string
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_id_fkey"
+            columns: ["reported_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topics: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +357,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      report_reason:
+        | "harassment"
+        | "inappropriate_content"
+        | "spam"
+        | "fake_profile"
+        | "other"
+      session_status: "waiting" | "active" | "completed" | "cancelled"
+      user_role: "seeker" | "listener" | "expert"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +491,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      report_reason: [
+        "harassment",
+        "inappropriate_content",
+        "spam",
+        "fake_profile",
+        "other",
+      ],
+      session_status: ["waiting", "active", "completed", "cancelled"],
+      user_role: ["seeker", "listener", "expert"],
+    },
   },
 } as const
