@@ -1,33 +1,60 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+// src/App.tsx
+
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster"; // Assuming you use this
+import { Sonner } from "@/components/ui/sonner";   // Assuming you use this
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/hooks/useAuth"; // Import useAuth
 import Layout from "@/components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import AuthPage from "./components/auth/AuthPage";
 import ChatStart from "./pages/ChatStart";
 import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
+// ADD THIS: Import a new component for the waiting room (you will create this)
+import ChatWaitingRoom from "./pages/ChatWaitingRoom";
 
 const queryClient = new QueryClient();
 
+// This new component will handle the main routing logic
+const AppRoutes = () => {
+  const { user } = useAuth();
+
+  // If you have a loading state in useAuth, you can show a loader here
+  // if (isLoading) return <LoadingSpinner />;
+
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/" element={user ? <Layout><Dashboard /></Layout> : <Index />} />
+
+      {/* Protected Routes - only accessible when logged in */}
+      <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+      <Route path="/chat/start" element={<Layout><ChatStart /></Layout>} />
+      
+      {/* ADDED: The missing route for the chat waiting room */}
+      <Route path="/chat/waiting/:sessionId" element={<Layout><ChatWaitingRoom /></Layout>} />
+
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+// The main App component is now cleaner
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/auth" element={<Layout requireAuth={false}><AuthPage /></Layout>} />
-            <Route path="/chat/start" element={<Layout><ChatStart /></Layout>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          {/* Put Toaster and Sonner here to be available everywhere */}
+          <Toaster />
+          <Sonner />
+          <AppRoutes />
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
