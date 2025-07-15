@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import ChatWaitingRoom from "./pages/ChatWaitingRoom";
 import ListenerQueue from "./pages/ListenerQueue";
+import ChatSessionPage from "./pages/ChatSessionPage";
 
 const queryClient = new QueryClient();
 
