@@ -303,7 +303,7 @@ export default function Dashboard() {
             Mood Journal
           </Button>
           <Button variant="outline" onClick={() => navigate('/history')}>
-            <MessageCircle className="w-4 h-4 mr-2" />
+            <MessageSquare className="w-4 h-4 mr-2" />
             Chat History
           </Button>
         </div>
