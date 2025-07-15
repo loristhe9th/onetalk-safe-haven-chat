@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Loader2, MessageSquare, ArrowLeft, Calendar, User, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 
 // Định nghĩa kiểu dữ liệu cho một phiên chat trong lịch sử
@@ -30,7 +30,6 @@ export default function ChatHistoryPage() {
 
     const fetchHistory = async () => {
       setLoading(true);
-      // Sử dụng rpc để gọi một hàm SQL phức tạp hơn
       const { data, error } = await supabase
         .from('chat_sessions')
         .select(`
@@ -42,7 +41,7 @@ export default function ChatHistoryPage() {
           listener:listener_id ( nickname )
         `)
         .or(`seeker_id.eq.${profile.id},listener_id.eq.${profile.id}`)
-        .eq('status', 'completed') // Chỉ lấy các phiên đã hoàn thành
+        .eq('status', 'completed')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -70,50 +69,53 @@ export default function ChatHistoryPage() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-3xl font-bold ml-4">Chat History</h1>
+        <h1 className="text-3xl font-bold ml-4">Nhật ký Hoạt động</h1>
       </div>
       
       {history.length === 0 ? (
         <div className="text-center py-16">
           <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold">No Completed Chats</h2>
-          <p className="text-muted-foreground mt-2">Your past conversations will appear here.</p>
+          <h2 className="text-xl font-semibold">Chưa có cuộc trò chuyện nào</h2>
+          <p className="text-muted-foreground mt-2">Các cuộc trò chuyện đã hoàn thành sẽ xuất hiện ở đây.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {history.map((session) => (
-            <Card key={session.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>
-                      Chat on {format(new Date(session.created_at), 'MMMM d, yyyy')}
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      Topic: {session.topics?.name || 'General'}
-                    </CardDescription>
+          {history.map((session) => {
+            const partner = profile?.nickname === session.seeker?.nickname
+              ? session.listener
+              : session.seeker;
+            
+            return (
+              <Card key={session.id}>
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">
+                        Cuộc trò chuyện
+                      </CardTitle>
+                      <CardDescription className="mt-1 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>{format(new Date(session.created_at), 'MMMM d, yyyy')}</span>
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline">Đã hoàn thành</Badge>
                   </div>
-                  <Badge variant="secondary">{session.status}</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center text-sm text-muted-foreground">
-                  <div>
-                    <span>You chatted with: </span>
-                    <span className="font-semibold text-foreground">
-                      {profile?.nickname === session.seeker?.nickname
-                        ? session.listener?.nickname
-                        : session.seeker?.nickname}
-                    </span>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                     <User className="w-4 h-4" />
+                     <span>Bạn đã trò chuyện với: </span>
+                     <span className="font-semibold text-foreground">{partner?.nickname || 'một người ẩn danh'}</span>
                   </div>
-                  {/* Nút này hiện chưa có chức năng, sẽ làm ở bước sau */}
-                  <Button variant="outline" size="sm" disabled>
-                    View Transcript
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                   <div className="flex items-center gap-2">
+                     <Tag className="w-4 h-4" />
+                     <span>Chủ đề: </span>
+                     <span className="font-semibold text-foreground">{session.topics?.name || 'Chung'}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>
