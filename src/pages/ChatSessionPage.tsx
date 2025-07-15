@@ -13,7 +13,7 @@ interface Message {
   id: string;
   content: string;
   created_at: string;
-  sender_id: string; // <-- SỬA Ở ĐÂY
+  sender_id: string;
   profiles: { nickname: string };
 }
 
@@ -37,15 +37,16 @@ export default function ChatSessionPage() {
 
     const fetchMessages = async () => {
       setLoading(true);
+      // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
       const { data, error } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .select('*, profiles(nickname)')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
       
       if (error) {
         console.error("Error fetching messages:", error);
-        toast({ title: "Error", description: "Could not load messages.", variant: "destructive" });
+        toast({ title: "Error", description: "Could not load messages. Check RLS policies on 'messages' table.", variant: "destructive" });
         navigate('/dashboard');
       } else {
         setMessages(data as Message[]);
@@ -62,13 +63,14 @@ export default function ChatSessionPage() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages',
+          table: 'messages', // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
           const fetchNewMessage = async () => {
+             // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
              const { data, error } = await supabase
-              .from('chat_messages')
+              .from('messages')
               .select('*, profiles(nickname)')
               .eq('id', payload.new.id)
               .single();
@@ -93,10 +95,11 @@ export default function ChatSessionPage() {
     const content = newMessage.trim();
     setNewMessage('');
 
-    const { error } = await supabase.from('chat_messages').insert({
+    // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
+    const { error } = await supabase.from('messages').insert({
       content: content,
       session_id: sessionId,
-      sender_id: profile.id, // <-- SỬA Ở ĐÂY
+      sender_id: profile.id,
     });
 
     if (error) {
@@ -143,17 +146,17 @@ export default function ChatSessionPage() {
           <div
             key={msg.id}
             className={`flex items-end gap-2 ${
-              msg.sender_id === profile?.id ? 'justify-end' : 'justify-start' // <-- SỬA Ở ĐÂY
+              msg.sender_id === profile?.id ? 'justify-end' : 'justify-start'
             }`}
           >
-            {msg.sender_id !== profile?.id && ( // <-- SỬA Ở ĐÂY
+            {msg.sender_id !== profile?.id && (
                 <Avatar className="w-8 h-8">
                     <AvatarFallback>{msg.profiles?.nickname?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
             )}
             <div
               className={`max-w-xs md:max-w-md p-3 rounded-lg ${
-                msg.sender_id === profile?.id // <-- SỬA Ở ĐÂY
+                msg.sender_id === profile?.id
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted'
               }`}
