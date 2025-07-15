@@ -14,6 +14,7 @@ import ChatStart from "./pages/ChatStart";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import ChatWaitingRoom from "./pages/ChatWaitingRoom";
+import ListenerQueue from "./pages/ListenerQueue";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const AppRoutes = () => {
 
       {/* ADDED: The missing route for the chat waiting room */}
       <Route path="/chat/waiting/:sessionId" element={<Layout><ChatWaitingRoom /></Layout>} />
+        <Route path="/listener/queue" element={<Layout><ListenerQueue /></Layout>} />
 
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
