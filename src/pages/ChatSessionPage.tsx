@@ -17,6 +17,11 @@ interface Message {
   profiles: { nickname: string };
 }
 
+// <-- THÊM: Định nghĩa kiểu dữ liệu cho thông tin phiên chat
+interface SessionInfo {
+  seeker_id: string;
+}
+
 export default function ChatSessionPage() {
   const { sessionId } = useParams();
   const { profile } = useAuth();
@@ -26,11 +31,33 @@ export default function ChatSessionPage() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   
+  // <-- THÊM: State để lưu thông tin phiên chat
+  const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // <-- THÊM: useEffect mới để lấy thông tin seeker_id của phiên chat
+  useEffect(() => {
+    if (!sessionId) return;
+    const fetchSessionInfo = async () => {
+        const { data, error } = await supabase
+            .from('chat_sessions')
+            .select('seeker_id')
+            .eq('id', sessionId)
+            .single();
+        if (error) {
+            console.error("Could not fetch session info:", error);
+            navigate('/dashboard');
+        } else {
+            setSessionInfo(data);
+        }
+    };
+    fetchSessionInfo();
+  }, [sessionId, navigate]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -55,18 +82,11 @@ export default function ChatSessionPage() {
 
     fetchMessages();
 
-    // Tạo một kênh (channel) để lắng nghe nhiều sự kiện
     const channel = supabase
       .channel(`chat-session-${sessionId}`)
       .on(
-        // Sự kiện 1: Lắng nghe tin nhắn mới
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `session_id=eq.${sessionId}`,
-        },
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${sessionId}`},
         (payload) => {
           const fetchNewMessage = async () => {
              const { data, error } = await supabase
@@ -82,30 +102,24 @@ export default function ChatSessionPage() {
         }
       )
       .on(
-        // === THÊM SỰ KIỆN 2: Lắng nghe phiên chat kết thúc ===
         'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'chat_sessions',
-          filter: `id=eq.${sessionId}`, // Lắng nghe cập nhật trên đúng phiên chat này
-        },
+        { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${sessionId}`},
         (payload) => {
-          // Nếu trạng thái mới là 'completed'
           if (payload.new.status === 'completed') {
-            toast({ title: "Chat Ended", description: "The other user has ended the session." });
-            // Điều hướng người dùng còn lại về trang chủ
-            navigate('/dashboard');
+            // Kiểm tra để không điều hướng người vừa nhấn nút End Chat
+            if (profile?.id !== sessionInfo?.seeker_id) {
+                toast({ title: "Chat Ended", description: "The other user has ended the session." });
+                navigate('/dashboard');
+            }
           }
         }
       )
       .subscribe();
 
-    // Dọn dẹp listener khi rời khỏi trang
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId, navigate]);
+  }, [sessionId, navigate, profile, sessionInfo]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,13 +140,23 @@ export default function ChatSessionPage() {
     }
   };
   
+  // <-- SỬA: Cập nhật toàn bộ hàm handleEndChat
   const handleEndChat = async () => {
-     if(!sessionId) return;
+     if(!sessionId || !profile || !sessionInfo) return;
+
      // Cập nhật trạng thái session thành 'completed'
-     // Hành động này sẽ kích hoạt sự kiện UPDATE mà người dùng kia đang lắng nghe
      await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
-     toast({ title: "Chat Ended", description: "The chat session has been completed."});
-     navigate('/dashboard');
+
+     // Kiểm tra vai trò của người dùng hiện tại
+     if (profile.id === sessionInfo.seeker_id) {
+         // Nếu là Seeker, chuyển đến trang đánh giá
+         toast({ title: "Chat Ended", description: "Please rate your experience." });
+         navigate(`/rate/${sessionId}`);
+     } else {
+         // Nếu là Listener, chuyển về trang chủ
+         toast({ title: "Chat Ended", description: "The session has been completed." });
+         navigate('/dashboard');
+     }
   }
 
   if (loading) {
@@ -160,7 +184,6 @@ export default function ChatSessionPage() {
             End Chat
         </Button>
       </header>
-
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
           <div
@@ -188,7 +211,6 @@ export default function ChatSessionPage() {
         ))}
         <div ref={messagesEndRef} />
       </main>
-
       <footer className="p-4 border-t bg-background shrink-0">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Input
