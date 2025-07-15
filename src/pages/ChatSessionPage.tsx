@@ -13,13 +13,13 @@ interface Message {
   id: string;
   content: string;
   created_at: string;
-  profile_id: string;
-  profiles: { nickname: string }; // Dữ liệu join từ bảng profiles
+  sender_id: string; // <-- SỬA Ở ĐÂY
+  profiles: { nickname: string };
 }
 
 export default function ChatSessionPage() {
   const { sessionId } = useParams();
-  const { user, profile } = useAuth(); // Lấy profile từ hook đã nâng cấp
+  const { profile } = useAuth();
   const navigate = useNavigate();
   
   const [messages, setMessages] = useState<Message[]>([]);
@@ -28,21 +28,18 @@ export default function ChatSessionPage() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Tự động cuộn xuống tin nhắn mới nhất
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Lấy dữ liệu và lắng nghe tin nhắn mới
   useEffect(() => {
     if (!sessionId) return;
 
-    // 1. Lấy các tin nhắn đã có trong phòng chat
     const fetchMessages = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('chat_messages')
-        .select('*, profiles(nickname)') // Join với bảng profiles để lấy nickname
+        .select('*, profiles(nickname)')
         .eq('session_id', sessionId)
         .order('created_at', { ascending: true });
       
@@ -58,7 +55,6 @@ export default function ChatSessionPage() {
 
     fetchMessages();
 
-    // 2. Lắng nghe các tin nhắn mới được thêm vào (INSERT)
     const channel = supabase
       .channel(`chat-session-${sessionId}`)
       .on(
@@ -70,7 +66,6 @@ export default function ChatSessionPage() {
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          // Khi có tin nhắn mới, fetch lại tin nhắn đó kèm profile
           const fetchNewMessage = async () => {
              const { data, error } = await supabase
               .from('chat_messages')
@@ -86,7 +81,6 @@ export default function ChatSessionPage() {
       )
       .subscribe();
 
-    // Dọn dẹp listener khi rời khỏi trang
     return () => {
       supabase.removeChannel(channel);
     };
@@ -102,12 +96,12 @@ export default function ChatSessionPage() {
     const { error } = await supabase.from('chat_messages').insert({
       content: content,
       session_id: sessionId,
-      profile_id: profile.id, // profile.id của người dùng hiện tại
+      sender_id: profile.id, // <-- SỬA Ở ĐÂY
     });
 
     if (error) {
       toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
-      setNewMessage(content); // Trả lại nội dung đã gõ nếu gửi lỗi
+      setNewMessage(content);
     }
   };
   
@@ -149,17 +143,17 @@ export default function ChatSessionPage() {
           <div
             key={msg.id}
             className={`flex items-end gap-2 ${
-              msg.profile_id === profile?.id ? 'justify-end' : 'justify-start'
+              msg.sender_id === profile?.id ? 'justify-end' : 'justify-start' // <-- SỬA Ở ĐÂY
             }`}
           >
-            {msg.profile_id !== profile?.id && (
+            {msg.sender_id !== profile?.id && ( // <-- SỬA Ở ĐÂY
                 <Avatar className="w-8 h-8">
                     <AvatarFallback>{msg.profiles?.nickname?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
             )}
             <div
               className={`max-w-xs md:max-w-md p-3 rounded-lg ${
-                msg.profile_id === profile?.id
+                msg.sender_id === profile?.id // <-- SỬA Ở ĐÂY
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted'
               }`}
