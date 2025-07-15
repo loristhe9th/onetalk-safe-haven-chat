@@ -17,6 +17,7 @@ import ChatWaitingRoom from "./pages/ChatWaitingRoom";
 import ListenerQueue from "./pages/ListenerQueue";
 import ChatSessionPage from "./pages/ChatSessionPage";
 import RatingPage from "./pages/RatingPage";
+import ChatHistoryPage from "./pages/ChatHistoryPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const AppRoutes = () => {
       <Route path="/listener/queue" element={<Layout><ListenerQueue /></Layout>} />
       <Route path="/chat/session/:sessionId" element={<Layout><ChatSessionPage /></Layout>} />
       <Route path="/rate/:sessionId" element={<Layout><RatingPage /></Layout>} />
+      <Route path="/history" element={<Layout><ChatHistoryPage /></Layout>} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
