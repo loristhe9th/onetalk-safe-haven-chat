@@ -37,7 +37,6 @@ export default function ChatSessionPage() {
 
     const fetchMessages = async () => {
       setLoading(true);
-      // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
       const { data, error } = await supabase
         .from('messages')
         .select('*, profiles(nickname)')
@@ -46,7 +45,7 @@ export default function ChatSessionPage() {
       
       if (error) {
         console.error("Error fetching messages:", error);
-        toast({ title: "Error", description: "Could not load messages. Check RLS policies on 'messages' table.", variant: "destructive" });
+        toast({ title: "Error", description: "Could not load messages.", variant: "destructive" });
         navigate('/dashboard');
       } else {
         setMessages(data as Message[]);
@@ -56,19 +55,20 @@ export default function ChatSessionPage() {
 
     fetchMessages();
 
+    // Tạo một kênh (channel) để lắng nghe nhiều sự kiện
     const channel = supabase
       .channel(`chat-session-${sessionId}`)
       .on(
+        // Sự kiện 1: Lắng nghe tin nhắn mới
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages', // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
+          table: 'messages',
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
           const fetchNewMessage = async () => {
-             // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
              const { data, error } = await supabase
               .from('messages')
               .select('*, profiles(nickname)')
@@ -81,8 +81,27 @@ export default function ChatSessionPage() {
           fetchNewMessage();
         }
       )
+      .on(
+        // === THÊM SỰ KIỆN 2: Lắng nghe phiên chat kết thúc ===
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_sessions',
+          filter: `id=eq.${sessionId}`, // Lắng nghe cập nhật trên đúng phiên chat này
+        },
+        (payload) => {
+          // Nếu trạng thái mới là 'completed'
+          if (payload.new.status === 'completed') {
+            toast({ title: "Chat Ended", description: "The other user has ended the session." });
+            // Điều hướng người dùng còn lại về trang chủ
+            navigate('/dashboard');
+          }
+        }
+      )
       .subscribe();
 
+    // Dọn dẹp listener khi rời khỏi trang
     return () => {
       supabase.removeChannel(channel);
     };
@@ -95,7 +114,6 @@ export default function ChatSessionPage() {
     const content = newMessage.trim();
     setNewMessage('');
 
-    // SỬA Ở ĐÂY: Dùng đúng tên bảng là 'messages'
     const { error } = await supabase.from('messages').insert({
       content: content,
       session_id: sessionId,
@@ -110,6 +128,8 @@ export default function ChatSessionPage() {
   
   const handleEndChat = async () => {
      if(!sessionId) return;
+     // Cập nhật trạng thái session thành 'completed'
+     // Hành động này sẽ kích hoạt sự kiện UPDATE mà người dùng kia đang lắng nghe
      await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
      toast({ title: "Chat Ended", description: "The chat session has been completed."});
      navigate('/dashboard');
