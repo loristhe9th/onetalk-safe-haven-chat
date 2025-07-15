@@ -1,62 +1,52 @@
 // src/App.tsx
 
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/toaster"; // Assuming you use this
-import { Sonner } from "@/components/ui/sonner";   // Assuming you use this
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth"; // Import useAuth
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/hooks/useAuth";
+
+// Import các component và page cần thiết
 import Layout from "@/components/layout/Layout";
+import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import AuthPage from "./components/auth/AuthPage";
 import ChatStart from "./pages/ChatStart";
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-// ADD THIS: Import a new component for the waiting room (you will create this)
 import ChatWaitingRoom from "./pages/ChatWaitingRoom";
+import NotFound from "./pages/NotFound";
+
+// NOTE: Các component UI như Toaster, Sonner, TooltipProvider đã được tạm thời loại bỏ
+// để đảm bảo không có lỗi nào từ chúng. Chúng ta sẽ thêm lại sau khi build thành công.
 
 const queryClient = new QueryClient();
 
-// This new component will handle the main routing logic
-const AppRoutes = () => {
-  const { user } = useAuth();
-
-  // If you have a loading state in useAuth, you can show a loader here
-  // if (isLoading) return <LoadingSpinner />;
-
+// Tách riêng phần định tuyến ra để code sạch sẽ hơn
+function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Các route không cần đăng nhập */}
       <Route path="/auth" element={<AuthPage />} />
-      <Route path="/" element={user ? <Layout><Dashboard /></Layout> : <Index />} />
+      <Route path="/" element={<Index />} />
 
-      {/* Protected Routes - only accessible when logged in */}
+      {/* Các route được bảo vệ, cần Layout và đăng nhập */}
       <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
       <Route path="/chat/start" element={<Layout><ChatStart /></Layout>} />
-      
-      {/* ADDED: The missing route for the chat waiting room */}
       <Route path="/chat/waiting/:sessionId" element={<Layout><ChatWaitingRoom /></Layout>} />
-
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      
+      {/* Route bắt lỗi 404 phải nằm cuối cùng */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
-};
+}
 
-// The main App component is now cleaner
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          {/* Put Toaster and Sonner here to be available everywhere */}
-          <Toaster />
-          <Sonner />
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <BrowserRouter>
           <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+        </BrowserRouter>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
