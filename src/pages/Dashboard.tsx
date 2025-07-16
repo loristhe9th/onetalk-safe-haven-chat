@@ -21,13 +21,16 @@ import { toast } from "@/hooks/use-toast";
 
 // Interface này có thể cần được cập nhật để khớp với hook useAuth
 interface Profile {
-  id: string;
+  id: string; // Khóa chính của bảng profiles
+  user_id: string; // Khóa ngoại liên kết đến auth.users
   nickname: string;
+  bio: string | null;
   role: 'seeker' | 'listener' | 'expert';
   rating_average: number;
   rating_count: number;
   total_sessions: number;
   is_available: boolean;
+  listener_status: 'unverified' | 'verified' | 'pending';
 }
 
 interface Topic {
