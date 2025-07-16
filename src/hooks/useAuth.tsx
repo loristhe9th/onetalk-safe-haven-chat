@@ -2,20 +2,27 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 
-// Định nghĩa kiểu dữ liệu cho Profile để sử dụng lại
-interface Profile {
-  id: string; // Đây là ID từ bảng profiles, không phải user_id
+// === BƯỚC 1: ĐỊNH NGHĨA INTERFACE PROFILE HOÀN CHỈNH ===
+// Interface này bao gồm tất cả các trường bạn cần trong ứng dụng.
+export interface Profile {
+  id: string;
   user_id: string;
   nickname: string;
-  // Thêm các trường khác của profile nếu cần
+  bio: string | null;
+  role: 'seeker' | 'listener' | 'expert';
+  rating_average: number;
+  rating_count: number;
+  total_sessions: number;
+  is_available: boolean;
+  listener_status: 'unverified' | 'verified' | 'pending';
 }
 
 // Định nghĩa kiểu dữ liệu cho giá trị của Context
 interface AuthContextType {
   user: User | null;
-  profile: Profile | null; // Thêm profile vào context
+  profile: Profile | null; // Profile giờ đây có kiểu dữ liệu hoàn chỉnh
   session: Session | null;
-  loading: boolean; // Thêm trạng thái loading
+  loading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -30,42 +37,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Lấy session hiện tại
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const fetchSessionAndProfile = async () => {
+      // 1. Lấy session hiện tại
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      // Nếu có user, lấy profile tương ứng
-      if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data, error }) => {
-            if (error) {
-              console.error('Error fetching profile on initial load:', error);
-            }
-            setProfile(data as Profile);
-            setLoading(false); // Hoàn tất loading
-          });
-      } else {
-        setLoading(false); // Hoàn tất loading nếu không có session
+      if (sessionError) {
+        console.error("Error fetching session:", sessionError);
+        setLoading(false);
+        return;
       }
-    });
 
-    // 2. Lắng nghe các thay đổi về trạng thái đăng nhập
+      setSession(session);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      // 2. Nếu có user, lấy profile tương ứng
+      if (currentUser) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*') // Lấy tất cả các cột
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile on initial load:', profileError);
+        }
+        setProfile(profileData as Profile);
+      }
+      setLoading(false); // Hoàn tất loading
+    };
+
+    fetchSessionAndProfile();
+
+    // 3. Lắng nghe các thay đổi về trạng thái đăng nhập
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      async (_event, newSession) => {
+        setSession(newSession);
+        const newUser = newSession?.user ?? null;
+        setUser(newUser);
 
-        // Nếu có user (đăng nhập/đăng ký thành công)
-        if (session?.user) {
+        if (newUser) {
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .eq('user_id', session.user.id)
+            .eq('user_id', newUser.id)
             .single();
           
           if (error) {
@@ -73,34 +88,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           setProfile(data as Profile);
         } else {
-          // Nếu không có user (đăng xuất)
           setProfile(null);
         }
         setLoading(false);
       }
     );
 
-    // Dọn dẹp listener khi component unmount
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
 
-  // Hàm đăng xuất
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
-  // Cung cấp các giá trị cho các component con
   const value = {
     user,
-    profile, // Thêm profile vào value
+    profile,
     session,
-    loading, // Thêm loading vào value
+    loading,
     signOut,
   };
 
-  // Chỉ hiển thị children khi không còn trong trạng thái loading ban đầu
   return (
     <AuthContext.Provider value={value}>
       {!loading && children}
