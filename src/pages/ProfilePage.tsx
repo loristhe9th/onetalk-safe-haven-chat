@@ -17,7 +17,6 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Cập nhật state nickname khi profile được tải
   useEffect(() => {
     if (profile) {
       setNickname(profile.nickname);
@@ -41,8 +40,8 @@ export default function ProfilePage() {
       if (error) throw error;
 
       toast({ title: "Success", description: "Your nickname has been updated." });
-      // NOTE: useAuth hook sẽ tự động cập nhật profile mới, nhưng có thể có độ trễ.
-      // Để trải nghiệm tốt hơn, có thể cần làm mới thủ công.
+      // Lưu ý: hook useAuth sẽ tự động cập nhật profile mới, nhưng có thể có độ trễ.
+      // Để làm mới ngay lập tức, bạn có thể gọi lại hàm fetch profile trong useAuth hoặc reload trang.
       setIsEditing(false);
     } catch (error: any) {
       console.error("Error updating nickname:", error);
@@ -112,19 +111,19 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Phần thống kê (chỉ hiển thị nếu có dữ liệu) */}
+          {/* Phần thống kê - Đã xóa ép kiểu (as any) */}
           <div className="space-y-4 pt-4 border-t">
              <h3 className="font-semibold">Your Stats</h3>
              <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="p-4 bg-muted rounded-lg">
                     <MessageSquare className="w-6 h-6 mx-auto text-primary mb-2" />
-                    <p className="text-2xl font-bold">{(profile as any).total_sessions || 0}</p>
+                    <p className="text-2xl font-bold">{profile.total_sessions || 0}</p>
                     <p className="text-sm text-muted-foreground">Sessions Completed</p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
                     <Star className="w-6 h-6 mx-auto text-yellow-400 mb-2" />
                     <p className="text-2xl font-bold">
-                        {((profile as any).rating_average || 0).toFixed(1)}
+                        {(profile.rating_average || 0).toFixed(1)}
                     </p>
                     <p className="text-sm text-muted-foreground">Average Rating</p>
                 </div>
