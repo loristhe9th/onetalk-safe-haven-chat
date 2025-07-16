@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'; // Thêm useCallback
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,13 +16,16 @@ interface Message {
   profiles: { nickname: string };
 }
 
+// Cập nhật để có cả status
 interface SessionInfo {
   seeker_id: string;
   created_at: string;
   duration_minutes: number;
+  status: 'waiting' | 'active' | 'completed';
 }
 
 const formatTime = (seconds: number) => {
+  if (seconds < 0) return '00:00';
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
@@ -46,38 +49,44 @@ export default function ChatSessionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Dùng useCallback để ổn định hàm handleEndChat, tránh re-render không cần thiết
-  const handleEndChat = useCallback(async () => {
-    if (!sessionId || !profile || !sessionInfo) return;
+  // Dùng useCallback để ổn định hàm, tránh kích hoạt lại useEffect không cần thiết
+  const handleEndChat = useCallback(async (showToast = true) => {
+    if (!sessionId || !sessionInfo) return;
+    // Ngăn việc gọi lại nếu session đã kết thúc
+    if (sessionInfo.status === 'completed') return;
+
     await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
-    if (profile.id === sessionInfo.seeker_id) {
+    
+    if (showToast) {
+        toast({ title: "Chat Ended", description: "The session has been completed." });
+    }
+
+    if (profile?.id === sessionInfo.seeker_id) {
         navigate(`/rate/${sessionId}`);
     } else {
         navigate('/dashboard');
     }
   }, [sessionId, profile, sessionInfo, navigate]);
 
-  // TÁCH RA: useEffect này chỉ chạy một lần để lấy dữ liệu ban đầu
+  // useEffect này chỉ chạy 1 lần để lấy dữ liệu ban đầu
   useEffect(() => {
     if (!sessionId) return;
     
     const fetchInitialData = async () => {
       setLoading(true);
-      // Lấy thông tin phiên chat
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
-        .select('seeker_id, created_at, duration_minutes')
+        .select('seeker_id, created_at, duration_minutes, status')
         .eq('id', sessionId)
         .single();
 
-      if (sessionError || !sessionData) {
-        toast({ title: "Error", description: "Invalid session.", variant: "destructive" });
+      if (sessionError || !sessionData || sessionData.status === 'completed') {
+        toast({ title: "Session Ended", description: "This chat session is no longer active.", variant: "destructive" });
         navigate('/dashboard');
         return;
       }
       setSessionInfo(sessionData);
 
-      // Lấy tin nhắn cũ
       const { data: messagesData, error: messagesError } = await supabase
         .from('messages')
         .select('*, profiles(nickname)')
@@ -90,13 +99,11 @@ export default function ChatSessionPage() {
         setMessages(messagesData as Message[]);
       }
 
-      // Khởi tạo bộ đếm thời gian
       const startTime = new Date(sessionData.created_at).getTime();
       const durationSeconds = sessionData.duration_minutes * 60;
       const now = new Date().getTime();
       const elapsedSeconds = Math.floor((now - startTime) / 1000);
-      const remainingSeconds = durationSeconds - elapsedSeconds;
-      setTimeLeft(remainingSeconds > 0 ? remainingSeconds : 0);
+      setTimeLeft(durationSeconds - elapsedSeconds);
       
       setLoading(false);
     };
@@ -104,13 +111,13 @@ export default function ChatSessionPage() {
     fetchInitialData();
   }, [sessionId, navigate]);
 
-  // TÁCH RA: useEffect này chỉ quản lý bộ đếm thời gian
+  // useEffect này chỉ quản lý bộ đếm thời gian
   useEffect(() => {
     if (timeLeft === null) return;
     if (timeLeft <= 0) {
       if (timeLeft === 0) {
         toast({ title: "Time's up!", description: "The session has ended automatically." });
-        handleEndChat();
+        handleEndChat(false); // Kết thúc mà không cần toast thêm
       }
       return;
     }
@@ -120,7 +127,7 @@ export default function ChatSessionPage() {
     return () => clearInterval(timer);
   }, [timeLeft, handleEndChat]);
   
-  // TÁCH RA: useEffect này chỉ quản lý kết nối Realtime
+  // useEffect này chỉ quản lý kết nối Realtime
   useEffect(() => {
     if (!sessionId) return;
     
@@ -134,11 +141,9 @@ export default function ChatSessionPage() {
         fetchNewMessage();
       })
       .on('postgres_changes', { event: 'UPDATE', table: 'chat_sessions', filter: `id=eq.${sessionId}`}, (payload) => {
-        if (payload.new.status === 'completed' && timeLeft && timeLeft > 0) {
-          if (profile?.id !== sessionInfo?.seeker_id) {
-              toast({ title: "Chat Ended", description: "The other user has ended the session." });
-              navigate('/dashboard');
-          }
+        if (payload.new.status === 'completed') {
+          toast({ title: "Chat Ended", description: "The other user has ended the session." });
+          handleEndChat(false); // Gọi hàm đã ổn định, không hiển thị toast trùng lặp
         }
       })
       .on('broadcast', { event: 'typing' }, (payload) => {
@@ -152,7 +157,7 @@ export default function ChatSessionPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId, profile?.id, sessionInfo?.seeker_id, navigate, timeLeft]); // Phụ thuộc tối thiểu
+  }, [sessionId, profile?.id, handleEndChat]); // Loại bỏ các dependency không cần thiết để tránh vòng lặp
 
   const handleTyping = () => {
     const channel = supabase.channel(`chat-session-${sessionId}`);
@@ -170,11 +175,7 @@ export default function ChatSessionPage() {
     supabase.channel(`chat-session-${sessionId}`).send({ type: 'broadcast', event: 'stopped-typing', payload: { senderId: profile?.id } });
     const content = newMessage.trim();
     setNewMessage('');
-    const { error } = await supabase.from('messages').insert({ content, session_id: sessionId, sender_id: profile.id });
-    if (error) {
-      toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
-      setNewMessage(content);
-    }
+    await supabase.from('messages').insert({ content, session_id: sessionId, sender_id: profile.id });
   };
 
   if (loading || timeLeft === null) {
@@ -200,7 +201,7 @@ export default function ChatSessionPage() {
                 <Clock className="w-5 h-5" />
                 <span>{formatTime(timeLeft)}</span>
             </div>
-            <Button variant="destructive" size="sm" onClick={handleEndChat}>
+            <Button variant="destructive" size="sm" onClick={() => handleEndChat(true)}>
                 <LogOut className="w-4 h-4 mr-2" />
                 End Chat
             </Button>
