@@ -1,9 +1,8 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useMemo } from 'react'; // Thêm useMemo
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
 
-// === BƯỚC 1: ĐỊNH NGHĨA INTERFACE PROFILE HOÀN CHỈNH ===
-// Interface này bao gồm tất cả các trường bạn cần trong ứng dụng.
+// Định nghĩa Interface Profile hoàn chỉnh
 export interface Profile {
   id: string;
   user_id: string;
@@ -17,19 +16,16 @@ export interface Profile {
   listener_status: 'unverified' | 'verified' | 'pending';
 }
 
-// Định nghĩa kiểu dữ liệu cho giá trị của Context
 interface AuthContextType {
   user: User | null;
-  profile: Profile | null; // Profile giờ đây có kiểu dữ liệu hoàn chỉnh
+  profile: Profile | null;
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
 
-// Tạo Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Tạo Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -38,38 +34,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const fetchSessionAndProfile = async () => {
-      // 1. Lấy session hiện tại
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.error("Error fetching session:", sessionError);
-        setLoading(false);
-        return;
-      }
-
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
-      // 2. Nếu có user, lấy profile tương ứng
       if (currentUser) {
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profileData } = await supabase
           .from('profiles')
-          .select('*') // Lấy tất cả các cột
+          .select('*')
           .eq('user_id', currentUser.id)
           .single();
-
-        if (profileError) {
-          console.error('Error fetching profile on initial load:', profileError);
-        }
         setProfile(profileData as Profile);
       }
-      setLoading(false); // Hoàn tất loading
+      setLoading(false);
     };
 
     fetchSessionAndProfile();
 
-    // 3. Lắng nghe các thay đổi về trạng thái đăng nhập
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         setSession(newSession);
@@ -77,15 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(newUser);
 
         if (newUser) {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', newUser.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching profile on auth state change:', error);
-          }
+          const { data } = await supabase.from('profiles').select('*').eq('user_id', newUser.id).single();
           setProfile(data as Profile);
         } else {
           setProfile(null);
@@ -103,13 +77,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  const value = {
+  // === SỬA LỖI Ở ĐÂY ===
+  // Sử dụng useMemo để ổn định tham chiếu của đối tượng value
+  // Nó chỉ tạo ra một đối tượng mới khi một trong các dependency (user, profile, etc.) thay đổi
+  const value = useMemo(() => ({
     user,
     profile,
     session,
     loading,
     signOut,
-  };
+  }), [user, profile, session, loading]);
 
   return (
     <AuthContext.Provider value={value}>
@@ -118,7 +95,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Tạo hook để dễ dàng sử dụng context
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
