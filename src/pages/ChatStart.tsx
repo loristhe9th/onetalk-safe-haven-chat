@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { 
   ArrowLeft, 
   Heart, 
@@ -27,58 +26,39 @@ interface Topic {
   color: string;
 }
 
-interface Profile {
-  id: string;
-  user_id: string;
-}
+// KHÔNG CẦN INTERFACE PROFILE Ở ĐÂY NỮA
 
 export default function ChatStart() {
-  const { user } = useAuth();
+  // Lấy profile và trạng thái loading trực tiếp từ useAuth
+  const { profile, loading: authLoading } = useAuth(); 
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string>("");
   const [listenerType, setListenerType] = useState<"listener" | "expert">("listener");
   const [description, setDescription] = useState("");
-  const [isEmergency, setIsEmergency] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Chỉ cần fetch topics khi component được tạo
+    const fetchTopics = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('topics')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+        setTopics(data || []);
+      } catch (error) {
+        console.error('Error fetching topics:', error);
+      }
+    };
+
     fetchTopics();
-    fetchProfile();
-  }, [user]);
+  }, []);
 
-  const fetchTopics = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('topics')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-      setTopics(data || []);
-    } catch (error) {
-      console.error('Error fetching topics:', error);
-    }
-  };
-
-  const fetchProfile = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-  };
+  // KHÔNG CẦN HÀM fetchProfile Ở ĐÂY NỮA
 
   const handleStartChat = async () => {
     if (!selectedTopic) {
@@ -94,21 +74,20 @@ export default function ChatStart() {
       toast({
         variant: "destructive",
         title: "Profile not found",
-        description: "Unable to start chat session",
+        description: "Unable to start chat session. Please try logging in again.",
       });
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
     try {
-      // Create a new chat session
       const { data: session, error } = await supabase
         .from('chat_sessions')
         .insert({
-          seeker_id: profile.id,
+          seeker_id: profile.id, // Dùng profile.id trực tiếp từ useAuth
           topic_id: selectedTopic,
           status: 'waiting',
-          is_emergency: isEmergency,
+          // is_emergency: isEmergency, // Cột này có thể không còn cần thiết
           duration_minutes: 30
         })
         .select()
@@ -121,19 +100,27 @@ export default function ChatStart() {
         description: "We're finding the perfect person to chat with you",
       });
 
-      // Navigate to waiting room
       navigate(`/chat/waiting/${session.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating chat session:', error);
       toast({
         variant: "destructive",
         title: "Failed to start chat",
-        description: "Please try again",
+        description: error.message || "Please try again",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  // Thêm màn hình chờ trong lúc kiểm tra profile
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/20">
@@ -141,7 +128,7 @@ export default function ChatStart() {
       <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -156,9 +143,9 @@ export default function ChatStart() {
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="space-y-8">
           {/* Emergency Notice */}
-          <Card className="border-emergency-red/20 bg-emergency-red/5">
+          <Card className="border-red-500/20 bg-red-500/5">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-emergency-red">
+              <CardTitle className="flex items-center space-x-2 text-red-500">
                 <AlertTriangle className="w-5 h-5" />
                 <span>Crisis Support</span>
               </CardTitle>
@@ -227,7 +214,7 @@ export default function ChatStart() {
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4 text-safe-green" />
+                            <Users className="w-4 h-4 text-green-500" />
                             <span className="font-medium">Peer Listener</span>
                             <Badge variant="secondary">Free</Badge>
                           </div>
@@ -239,18 +226,18 @@ export default function ChatStart() {
                     </Label>
                   </div>
 
-                  <div className="flex items-center space-x-3 p-4 rounded-lg border">
-                    <RadioGroupItem value="expert" id="expert" />
-                    <Label htmlFor="expert" className="flex-1 cursor-pointer">
+                  <div className="flex items-center space-x-3 p-4 rounded-lg border opacity-50 cursor-not-allowed">
+                    <RadioGroupItem value="expert" id="expert" disabled />
+                    <Label htmlFor="expert" className="flex-1 cursor-not-allowed">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center space-x-2">
-                            <Star className="w-4 h-4 text-warm-orange" />
+                            <Star className="w-4 h-4 text-yellow-500" />
                             <span className="font-medium">Professional Expert</span>
                             <Badge>Premium</Badge>
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
-                            Licensed counselors and therapists for professional guidance
+                            Licensed counselors and therapists for professional guidance (Coming Soon)
                           </div>
                         </div>
                       </div>
@@ -280,36 +267,15 @@ export default function ChatStart() {
             </CardContent>
           </Card>
 
-          {/* Session Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Session Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">30-minute session duration</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Heart className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">Anonymous and confidential</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">One-on-one conversation</span>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Start Button */}
           <div className="flex justify-center">
             <Button 
               onClick={handleStartChat} 
-              disabled={loading || !selectedTopic}
+              disabled={isSubmitting || !selectedTopic}
               size="lg"
               className="px-8"
             >
-              {loading ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Finding a listener...
