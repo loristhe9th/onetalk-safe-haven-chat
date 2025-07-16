@@ -19,6 +19,7 @@ import ChatSessionPage from "./pages/ChatSessionPage";
 import RatingPage from "./pages/RatingPage";
 import ChatHistoryPage from "./pages/ChatHistoryPage";
 import ProfilePage from "./pages/ProfilePage";
+import MoodJournalPage from "./pages/MoodJournalPage";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const AppRoutes = () => {
       <Route path="/rate/:sessionId" element={<Layout><RatingPage /></Layout>} />
       <Route path="/history" element={<Layout><ChatHistoryPage /></Layout>} />
       <Route path="/profile/settings" element={<Layout><ProfilePage /></Layout>} />
+      <Route path="/mood-journal" element={<Layout><MoodJournalPage /></Layout>} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
