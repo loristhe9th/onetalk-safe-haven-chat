@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
-import { Send, LogOut, Loader2 } from 'lucide-react';
+import { Send, LogOut, Loader2, Clock } from 'lucide-react';
 
 // Định nghĩa kiểu dữ liệu
 interface Message {
@@ -17,10 +17,18 @@ interface Message {
   profiles: { nickname: string };
 }
 
-// <-- THÊM: Định nghĩa kiểu dữ liệu cho thông tin phiên chat
 interface SessionInfo {
   seeker_id: string;
+  created_at: string;
+  duration_minutes: number;
 }
+
+// Hàm trợ giúp để định dạng thời gian
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+};
 
 export default function ChatSessionPage() {
   const { sessionId } = useParams();
@@ -30,9 +38,10 @@ export default function ChatSessionPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  
-  // <-- THÊM: State để lưu thông tin phiên chat
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
+  
+  // <-- THÊM: State cho bộ đếm thời gian
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -40,24 +49,49 @@ export default function ChatSessionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // <-- THÊM: useEffect mới để lấy thông tin seeker_id của phiên chat
+  // <-- SỬA: useEffect để lấy thông tin session và khởi tạo bộ đếm
   useEffect(() => {
     if (!sessionId) return;
     const fetchSessionInfo = async () => {
         const { data, error } = await supabase
             .from('chat_sessions')
-            .select('seeker_id')
+            .select('seeker_id, created_at, duration_minutes')
             .eq('id', sessionId)
             .single();
-        if (error) {
+        if (error || !data) {
             console.error("Could not fetch session info:", error);
+            toast({ title: "Error", description: "Invalid session.", variant: "destructive" });
             navigate('/dashboard');
         } else {
             setSessionInfo(data);
+            // Khởi tạo bộ đếm thời gian
+            const startTime = new Date(data.created_at).getTime();
+            const durationSeconds = data.duration_minutes * 60;
+            const now = new Date().getTime();
+            const elapsedSeconds = Math.floor((now - startTime) / 1000);
+            const remainingSeconds = durationSeconds - elapsedSeconds;
+            setTimeLeft(remainingSeconds > 0 ? remainingSeconds : 0);
         }
     };
     fetchSessionInfo();
   }, [sessionId, navigate]);
+
+  // <-- THÊM: useEffect cho logic đếm ngược
+  useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0) {
+      if(timeLeft === 0) {
+        toast({ title: "Time's up!", description: "The session has ended automatically." });
+        handleEndChat();
+      }
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prevTime) => (prevTime ? prevTime - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -72,7 +106,6 @@ export default function ChatSessionPage() {
       
       if (error) {
         console.error("Error fetching messages:", error);
-        toast({ title: "Error", description: "Could not load messages.", variant: "destructive" });
         navigate('/dashboard');
       } else {
         setMessages(data as Message[]);
@@ -105,8 +138,7 @@ export default function ChatSessionPage() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${sessionId}`},
         (payload) => {
-          if (payload.new.status === 'completed') {
-            // Kiểm tra để không điều hướng người vừa nhấn nút End Chat
+          if (payload.new.status === 'completed' && timeLeft && timeLeft > 0) {
             if (profile?.id !== sessionInfo?.seeker_id) {
                 toast({ title: "Chat Ended", description: "The other user has ended the session." });
                 navigate('/dashboard');
@@ -140,26 +172,17 @@ export default function ChatSessionPage() {
     }
   };
   
-  // <-- SỬA: Cập nhật toàn bộ hàm handleEndChat
   const handleEndChat = async () => {
      if(!sessionId || !profile || !sessionInfo) return;
-
-     // Cập nhật trạng thái session thành 'completed'
      await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
-
-     // Kiểm tra vai trò của người dùng hiện tại
      if (profile.id === sessionInfo.seeker_id) {
-         // Nếu là Seeker, chuyển đến trang đánh giá
-         toast({ title: "Chat Ended", description: "Please rate your experience." });
          navigate(`/rate/${sessionId}`);
      } else {
-         // Nếu là Listener, chuyển về trang chủ
-         toast({ title: "Chat Ended", description: "The session has been completed." });
          navigate('/dashboard');
      }
   }
 
-  if (loading) {
+  if (loading || timeLeft === null) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -179,12 +202,21 @@ export default function ChatSessionPage() {
                 <p className="text-xs text-muted-foreground">Session: {sessionId?.substring(0, 8)}</p>
             </div>
         </div>
-        <Button variant="destructive" size="sm" onClick={handleEndChat}>
-            <LogOut className="w-4 h-4 mr-2" />
-            End Chat
-        </Button>
+        {/* <-- HIỂN THỊ ĐỒNG HỒ --> */}
+        <div className="flex items-center gap-4">
+            <div className={`flex items-center gap-2 font-mono text-lg ${timeLeft < 300 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                <Clock className="w-5 h-5" />
+                <span>{formatTime(timeLeft)}</span>
+            </div>
+            <Button variant="destructive" size="sm" onClick={handleEndChat}>
+                <LogOut className="w-4 h-4 mr-2" />
+                End Chat
+            </Button>
+        </div>
       </header>
+
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* ... JSX của phần tin nhắn không đổi ... */}
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -211,6 +243,7 @@ export default function ChatSessionPage() {
         ))}
         <div ref={messagesEndRef} />
       </main>
+
       <footer className="p-4 border-t bg-background shrink-0">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Input
