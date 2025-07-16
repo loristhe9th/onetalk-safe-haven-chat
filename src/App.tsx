@@ -22,6 +22,7 @@ import ProfilePage from "./pages/ProfilePage";
 import MoodJournalPage from "./pages/MoodJournalPage";
 import ListenerOnboardingPage from "./pages/ListenerOnboardingPage";
 import ListenerProfilePage from "./pages/ListenerProfilePage";
+import GroupRoomsListPage from "./pages/GroupRoomsListPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const AppRoutes = () => {
       <Route path="/mood-journal" element={<Layout><MoodJournalPage /></Layout>} />
       <Route path="/listener/onboarding" element={<Layout><ListenerOnboardingPage /></Layout>} />
       <Route path="/profile/:nickname" element={<Layout><ListenerProfilePage /></Layout>} />
+      <Route path="/group-chats" element={<Layout><GroupRoomsListPage /></Layout>} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
