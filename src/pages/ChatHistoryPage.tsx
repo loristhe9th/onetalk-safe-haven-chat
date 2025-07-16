@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Dòng này đã đúng
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,7 +13,6 @@ interface HistorySession {
   id: string;
   created_at: string;
   status: 'completed' | 'active' | 'waiting';
-  // Lấy thông tin từ các bảng liên quan
   topics: { name: string } | null;
   seeker: { nickname: string } | null;
   listener: { nickname: string } | null;
@@ -105,7 +104,14 @@ export default function ChatHistoryPage() {
                   <div className="flex items-center gap-2">
                      <User className="w-4 h-4" />
                      <span>Bạn đã trò chuyện với: </span>
-                     <span className="font-semibold text-foreground">{partner?.nickname || 'một người ẩn danh'}</span>
+                     {/* === PHẦN ĐƯỢC CẬP NHẬT === */}
+                     {partner?.nickname ? (
+                       <Link to={`/profile/${partner.nickname}`} className="font-semibold text-foreground hover:underline">
+                         {partner.nickname}
+                       </Link>
+                     ) : (
+                       <span className="font-semibold text-foreground">một người ẩn danh</span>
+                     )}
                   </div>
                    <div className="flex items-center gap-2">
                      <Tag className="w-4 h-4" />
