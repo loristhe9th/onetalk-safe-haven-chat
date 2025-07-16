@@ -19,19 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-// Interface này có thể cần được cập nhật để khớp với hook useAuth
-interface Profile {
-  id: string; // Khóa chính của bảng profiles
-  user_id: string; // Khóa ngoại liên kết đến auth.users
-  nickname: string;
-  bio: string | null;
-  role: 'seeker' | 'listener' | 'expert';
-  rating_average: number;
-  rating_count: number;
-  total_sessions: number;
-  is_available: boolean;
-  listener_status: 'unverified' | 'verified' | 'pending';
-}
+// KHÔNG CẦN INTERFACE PROFILE Ở ĐÂY NỮA
 
 interface Topic {
   id: string;
@@ -41,19 +29,15 @@ interface Topic {
 }
 
 export default function Dashboard() {
-  // Cập nhật để lấy profile trực tiếp từ useAuth
-  const { user, profile, signOut } = useAuth(); 
+  // Lấy profile và trạng thái loading trực tiếp từ useAuth
+  const { profile, signOut, loading: authLoading } = useAuth(); 
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Không cần fetchProfile riêng nữa nếu useAuth đã làm
-    if (profile) {
-      setLoading(false);
-    }
+    // Chỉ cần fetch topics khi component được tạo
     fetchTopics();
-  }, [profile]);
+  }, []);
 
   const fetchTopics = async () => {
     try {
@@ -94,7 +78,8 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) {
+  // Sử dụng trạng thái loading từ useAuth
+  if (authLoading || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -118,12 +103,12 @@ export default function Dashboard() {
           <div className="flex items-center space-x-4">
             <Avatar className="w-8 h-8">
               <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                {profile?.nickname.charAt(0).toUpperCase()}
+                {profile.nickname.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium">{profile?.nickname}</p>
-              <p className="text-xs text-muted-foreground capitalize">{(profile as any)?.role || 'Member'}</p>
+              <p className="text-sm font-medium">{profile.nickname}</p>
+              <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>
             </div>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
               <LogOut className="w-4 h-4" />
@@ -135,21 +120,21 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Welcome back, {profile?.nickname}!</h2>
+          <h2 className="text-3xl font-bold mb-2">Welcome back, {profile.nickname}!</h2>
           <p className="text-muted-foreground">
             How can we support you today? Choose an option below to get started.
           </p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Đã xóa các ép kiểu (as any) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
-              <MessageCircle className="h-4 w-4 text-green-500" />
+              <MessageSquare className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(profile as any)?.total_sessions || 0}</div>
+              <div className="text-2xl font-bold">{profile.total_sessions || 0}</div>
               <p className="text-xs text-muted-foreground">Conversations completed</p>
             </CardContent>
           </Card>
@@ -161,10 +146,10 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {((profile as any)?.rating_average || 0) > 0 ? ((profile as any).rating_average).toFixed(1) : '-'}
+                {(profile.rating_average || 0) > 0 ? profile.rating_average.toFixed(1) : '-'}
               </div>
               <p className="text-xs text-muted-foreground">
-                {((profile as any)?.rating_count || 0)} reviews
+                {profile.rating_count || 0} reviews
               </p>
             </CardContent>
           </Card>
@@ -176,8 +161,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                <Badge variant={(profile as any)?.is_available ? "default" : "secondary"}>
-                  {(profile as any)?.is_available ? "Available" : "Offline"}
+                <Badge variant={profile.is_available ? "default" : "secondary"}>
+                  {profile.is_available ? "Available" : "Offline"}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">Current availability</p>
@@ -243,7 +228,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* === BẮT ĐẦU CARD MỚI === */}
+          {/* Group Chat Card */}
           <Card className="lg:col-span-2 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -260,7 +245,6 @@ export default function Dashboard() {
               </Button>
             </CardContent>
           </Card>
-          {/* === KẾT THÚC CARD MỚI === */}
         </div>
 
         {/* Topics Section */}
