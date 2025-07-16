@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react'; // Thêm useCallback
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { Send, LogOut, Loader2, Clock } from 'lucide-react';
 
-// Định nghĩa kiểu dữ liệu
 interface Message {
   id: string;
   content: string;
@@ -23,7 +22,6 @@ interface SessionInfo {
   duration_minutes: number;
 }
 
-// Hàm trợ giúp để định dạng thời gian
 const formatTime = (seconds: number) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -40,45 +38,77 @@ export default function ChatSessionPage() {
   const [loading, setLoading] = useState(true);
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-
-  // === BƯỚC 1: THÊM STATE VÀ REF MỚI ===
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]); // Thêm isTyping để cuộn khi chỉ báo xuất hiện
+  }, [messages, isTyping]);
 
+  // Dùng useCallback để ổn định hàm handleEndChat, tránh re-render không cần thiết
+  const handleEndChat = useCallback(async () => {
+    if (!sessionId || !profile || !sessionInfo) return;
+    await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
+    if (profile.id === sessionInfo.seeker_id) {
+        navigate(`/rate/${sessionId}`);
+    } else {
+        navigate('/dashboard');
+    }
+  }, [sessionId, profile, sessionInfo, navigate]);
+
+  // TÁCH RA: useEffect này chỉ chạy một lần để lấy dữ liệu ban đầu
   useEffect(() => {
     if (!sessionId) return;
-    const fetchSessionInfo = async () => {
-        const { data, error } = await supabase
-            .from('chat_sessions')
-            .select('seeker_id, created_at, duration_minutes')
-            .eq('id', sessionId)
-            .single();
-        if (error || !data) {
-            console.error("Could not fetch session info:", error);
-            toast({ title: "Error", description: "Invalid session.", variant: "destructive" });
-            navigate('/dashboard');
-        } else {
-            setSessionInfo(data);
-            const startTime = new Date(data.created_at).getTime();
-            const durationSeconds = data.duration_minutes * 60;
-            const now = new Date().getTime();
-            const elapsedSeconds = Math.floor((now - startTime) / 1000);
-            const remainingSeconds = durationSeconds - elapsedSeconds;
-            setTimeLeft(remainingSeconds > 0 ? remainingSeconds : 0);
-        }
+    
+    const fetchInitialData = async () => {
+      setLoading(true);
+      // Lấy thông tin phiên chat
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('chat_sessions')
+        .select('seeker_id, created_at, duration_minutes')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionError || !sessionData) {
+        toast({ title: "Error", description: "Invalid session.", variant: "destructive" });
+        navigate('/dashboard');
+        return;
+      }
+      setSessionInfo(sessionData);
+
+      // Lấy tin nhắn cũ
+      const { data: messagesData, error: messagesError } = await supabase
+        .from('messages')
+        .select('*, profiles(nickname)')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
+
+      if (messagesError) {
+        console.error("Error fetching messages:", messagesError);
+      } else {
+        setMessages(messagesData as Message[]);
+      }
+
+      // Khởi tạo bộ đếm thời gian
+      const startTime = new Date(sessionData.created_at).getTime();
+      const durationSeconds = sessionData.duration_minutes * 60;
+      const now = new Date().getTime();
+      const elapsedSeconds = Math.floor((now - startTime) / 1000);
+      const remainingSeconds = durationSeconds - elapsedSeconds;
+      setTimeLeft(remainingSeconds > 0 ? remainingSeconds : 0);
+      
+      setLoading(false);
     };
-    fetchSessionInfo();
+
+    fetchInitialData();
   }, [sessionId, navigate]);
 
+  // TÁCH RA: useEffect này chỉ quản lý bộ đếm thời gian
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0) {
-      if(timeLeft === 0) {
+    if (timeLeft === null) return;
+    if (timeLeft <= 0) {
+      if (timeLeft === 0) {
         toast({ title: "Time's up!", description: "The session has ended automatically." });
         handleEndChat();
       }
@@ -88,53 +118,29 @@ export default function ChatSessionPage() {
       setTimeLeft((prevTime) => (prevTime ? prevTime - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft]);
-
+  }, [timeLeft, handleEndChat]);
+  
+  // TÁCH RA: useEffect này chỉ quản lý kết nối Realtime
   useEffect(() => {
     if (!sessionId) return;
-
-    const fetchMessages = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*, profiles(nickname)')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error("Error fetching messages:", error);
-        navigate('/dashboard');
-      } else {
-        setMessages(data as Message[]);
-      }
-      setLoading(false);
-    };
-
-    fetchMessages();
-
+    
     const channel = supabase
       .channel(`chat-session-${sessionId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `session_id=eq.${sessionId}`},
-        (payload) => {
-          const fetchNewMessage = async () => {
-             const { data, error } = await supabase.from('messages').select('*, profiles(nickname)').eq('id', payload.new.id).single();
-            if (!error && data) setMessages((prevMessages) => [...prevMessages, data as Message]);
-          }
-          fetchNewMessage();
+      .on('postgres_changes', { event: 'INSERT', table: 'messages', filter: `session_id=eq.${sessionId}`}, (payload) => {
+        const fetchNewMessage = async () => {
+           const { data } = await supabase.from('messages').select('*, profiles(nickname)').eq('id', payload.new.id).single();
+          if (data) setMessages((prev) => [...prev, data as Message]);
         }
-      )
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_sessions', filter: `id=eq.${sessionId}`},
-        (payload) => {
-          if (payload.new.status === 'completed' && timeLeft && timeLeft > 0) {
-            if (profile?.id !== sessionInfo?.seeker_id) {
-                toast({ title: "Chat Ended", description: "The other user has ended the session." });
-                navigate('/dashboard');
-            }
+        fetchNewMessage();
+      })
+      .on('postgres_changes', { event: 'UPDATE', table: 'chat_sessions', filter: `id=eq.${sessionId}`}, (payload) => {
+        if (payload.new.status === 'completed' && timeLeft && timeLeft > 0) {
+          if (profile?.id !== sessionInfo?.seeker_id) {
+              toast({ title: "Chat Ended", description: "The other user has ended the session." });
+              navigate('/dashboard');
           }
         }
-      )
-      // === BƯỚC 2: CẬP NHẬT KÊNH REALTIME ===
+      })
       .on('broadcast', { event: 'typing' }, (payload) => {
           if (payload.payload.senderId !== profile?.id) setIsTyping(true);
       })
@@ -146,69 +152,37 @@ export default function ChatSessionPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [sessionId, navigate, profile, sessionInfo, timeLeft]);
+  }, [sessionId, profile?.id, sessionInfo?.seeker_id, navigate, timeLeft]); // Phụ thuộc tối thiểu
 
-  // === BƯỚC 3: THÊM HÀM XỬ LÝ GÕ PHÍM ===
   const handleTyping = () => {
     const channel = supabase.channel(`chat-session-${sessionId}`);
-    channel.send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { senderId: profile?.id },
-    });
+    channel.send({ type: 'broadcast', event: 'typing', payload: { senderId: profile?.id } });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      channel.send({
-        type: 'broadcast',
-        event: 'stopped-typing',
-        payload: { senderId: profile?.id },
-      });
+      channel.send({ type: 'broadcast', event: 'stopped-typing', payload: { senderId: profile?.id } });
     }, 2000);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() === '' || !profile || !sessionId) return;
-
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    supabase.channel(`chat-session-${sessionId}`).send({
-        type: 'broadcast',
-        event: 'stopped-typing',
-        payload: { senderId: profile?.id },
-    });
-
+    supabase.channel(`chat-session-${sessionId}`).send({ type: 'broadcast', event: 'stopped-typing', payload: { senderId: profile?.id } });
     const content = newMessage.trim();
     setNewMessage('');
-
-    const { error } = await supabase.from('messages').insert({
-      content: content,
-      session_id: sessionId,
-      sender_id: profile.id,
-    });
-
+    const { error } = await supabase.from('messages').insert({ content, session_id: sessionId, sender_id: profile.id });
     if (error) {
       toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
       setNewMessage(content);
     }
   };
-  
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleEndChat = async () => {
-     if(!sessionId || !profile || !sessionInfo) return;
-     await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
-     if (profile.id === sessionInfo.seeker_id) {
-         navigate(`/rate/${sessionId}`);
-     } else {
-         navigate('/dashboard');
-     }
-  }
 
   if (loading || timeLeft === null) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-    )
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -245,7 +219,6 @@ export default function ChatSessionPage() {
             </div>
           </div>
         ))}
-        {/* === BƯỚC 5: HIỂN THỊ CHỈ BÁO TRONG GIAO DIỆN === */}
         {isTyping && (
           <div className="flex items-end gap-2 justify-start">
               <Avatar className="w-8 h-8"><AvatarFallback>...</AvatarFallback></Avatar>
@@ -259,19 +232,8 @@ export default function ChatSessionPage() {
 
       <footer className="p-4 border-t bg-background shrink-0">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-          {/* === BƯỚC 4: CẬP NHẬT Ô INPUT === */}
-          <Input
-            value={newMessage}
-            onChange={(e) => {
-                setNewMessage(e.target.value);
-                handleTyping();
-            }}
-            placeholder="Type your message..."
-            autoComplete="off"
-          />
-          <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-            <Send className="w-4 h-4" />
-          </Button>
+          <Input value={newMessage} onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }} placeholder="Type your message..." autoComplete="off" />
+          <Button type="submit" size="icon" disabled={!newMessage.trim()}><Send className="w-4 h-4" /></Button>
         </form>
       </footer>
     </div>
