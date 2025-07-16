@@ -6,37 +6,31 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Users } from "lucide-react";
 
-// Giả định bạn có kiểu dữ liệu Profile như thế này
+// Cập nhật lại interface Profile để có listener_status
 interface Profile {
   id: string;
   user_id: string;
+  listener_status: 'unverified' | 'verified' | 'pending';
 }
 
 export default function ListenerQueue() {
-  const { user } = useAuth();
+  // Sửa lại để lấy cả profile từ useAuth
+  const { profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
 
-  // Lấy thông tin profile của người dùng hiện tại
+  // === BẮT ĐẦU THÊM LOGIC MỚI ===
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!user) return;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, user_id')
-        .eq('user_id', user.id)
-        .single();
-      if (error) {
-        console.error("Error fetching profile:", error);
-      } else {
-        setProfile(data);
-      }
-    };
-    fetchProfile();
-  }, [user]);
+    // Nếu chưa tải xong profile thì không làm gì cả
+    if (authLoading || !profile) return;
 
-  // Hàm này sẽ gọi Database Function 'matchmake'
+    // Nếu người dùng chưa được xác minh, chuyển họ đến trang onboarding
+    if (profile.listener_status === 'unverified') {
+      navigate('/listener/onboarding');
+    }
+  }, [profile, authLoading, navigate]);
+  // === KẾT THÚC LOGIC MỚI ===
+
   const handleFindChat = async () => {
     if (!profile) {
       toast({ title: "Error", description: "Profile not found.", variant: "destructive" });
@@ -52,12 +46,9 @@ export default function ListenerQueue() {
       if (error) throw error;
 
       if (sessionId) {
-        // Nếu tìm thấy phiên chat, điều hướng đến phòng chat
         toast({ title: "Success!", description: "Found a session. Connecting..." });
-        // CHÚ Ý: Chúng ta sẽ tạo trang này ở bước sau
         navigate(`/chat/session/${sessionId}`);
       } else {
-        // Nếu không có ai đang chờ
         toast({ title: "No one is waiting", description: "The queue is empty. Please try again later." });
       }
     } catch (error: any) {
@@ -68,6 +59,15 @@ export default function ListenerQueue() {
     }
   };
 
+  // Thêm màn hình chờ trong lúc kiểm tra profile
+  if (authLoading || !profile || profile.listener_status !== 'verified') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center p-4">
       <Users className="w-16 h-16 text-primary mb-4" />
@@ -75,7 +75,7 @@ export default function ListenerQueue() {
       <p className="text-muted-foreground mb-8 max-w-md">
         Help someone in need by offering your support. Click the button below to find a person waiting to chat.
       </p>
-      <Button onClick={handleFindChat} disabled={isLoading || !profile} size="lg">
+      <Button onClick={handleFindChat} disabled={isLoading} size="lg">
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
