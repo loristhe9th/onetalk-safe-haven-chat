@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Heart, Shield, Users } from "lucide-react";
-import Mascot from '@/components/ui/Mascot'; // Import component Mascot
+import { Eye, EyeOff, User, Lock, Users, Shield, Heart } from "lucide-react";
+import Mascot from '@/components/ui/Mascot';
 
 const DUMMY_DOMAIN = "@onetalk.app";
 
@@ -51,10 +51,10 @@ export default function AuthPage() {
     }
 
     setIsLoading(true);
+    // ... (logic xử lý submit không đổi)
     try {
       const email = `${formData.nickname}${DUMMY_DOMAIN}`;
       let error = null;
-
       if (action === 'signup') {
         const { error: signUpError } = await supabase.auth.signUp({ email, password: formData.password, options: { data: { nickname: formData.nickname } } });
         error = signUpError;
@@ -62,7 +62,6 @@ export default function AuthPage() {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: formData.password });
         error = signInError;
       }
-      
       if (error) {
         if (action === 'signup' && error.message.includes("already registered")) {
           toast({ variant: "destructive", title: "Nickname Taken", description: "This nickname is already in use." });
@@ -83,124 +82,80 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/20 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-            {/* === THAY THẾ ICON HEART BẰNG MASCOT === */}
-            <Mascot variant="idle" className="w-20 h-20 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-foreground mb-2">OneTalk</h1>
-            <p className="text-muted-foreground">Your safe haven for anonymous support</p>
-        </div>
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="text-center"><Shield className="w-6 h-6 text-green-500 mx-auto mb-2" /><p className="text-xs text-muted-foreground">Anonymous</p></div>
-          <div className="text-center"><Heart className="w-6 h-6 text-red-500 mx-auto mb-2" /><p className="text-xs text-muted-foreground">Supportive</p></div>
-          <div className="text-center"><Users className="w-6 h-6 text-blue-500 mx-auto mb-2" /><p className="text-xs text-muted-foreground">Community</p></div>
+            <Mascot variant="happy" className="w-24 h-24 mx-auto mb-4" />
+            <h1 className="text-4xl font-bold text-foreground mb-2">Welcome to OneTalk</h1>
+            <p className="text-lg text-muted-foreground">Your safe haven for anonymous support</p>
         </div>
 
-        <Card className="shadow-lg border-0 bg-card/80 backdrop-blur">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Join OneTalk</CardTitle>
-            <CardDescription className="text-center">Connect with caring listeners anonymously</CardDescription>
+        <Card className="bg-card/80 backdrop-blur-sm border shadow-card-depth">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Join the Conversation</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-muted p-1 h-11">
+                <TabsTrigger value="signup" className="text-base data-[state=active]:bg-background data-[state=active]:shadow-md">Sign Up</TabsTrigger>
+                <TabsTrigger value="signin" className="text-base data-[state=active]:bg-background data-[state=active]:shadow-md">Sign In</TabsTrigger>
               </TabsList>
               
+              {/* Sign Up Form */}
               <TabsContent value="signup">
-                <form onSubmit={(e) => handleSubmit(e, 'signup')} className="space-y-4 pt-4">
+                <form onSubmit={(e) => handleSubmit(e, 'signup')} className="space-y-6 pt-6">
                   <div className="space-y-2">
-                    <label htmlFor="signup-nickname" className="text-sm font-medium">Choose a Nickname</label>
-                    <Input
-                      id="signup-nickname"
-                      name="nickname"
-                      type="text"
-                      placeholder="Your anonymous nickname"
-                      value={formData.nickname}
-                      onChange={handleNicknameChange}
-                      required
-                      className={`bg-background/50 ${nicknameError ? 'border-destructive' : ''}`}
-                      autoComplete="username"
-                    />
-                    {nicknameError ? (
-                      <p className="text-xs text-destructive">{nicknameError}</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        Min 3 characters. No spaces or special characters.
-                      </p>
-                    )}
+                    <label htmlFor="signup-nickname" className="text-sm font-medium text-muted-foreground">Nickname</label>
+                    <div className="relative flex items-center">
+                        <User className="absolute left-3 w-5 h-5 text-muted-foreground" />
+                        <Input id="signup-nickname" name="nickname" type="text" placeholder="Your anonymous nickname" value={formData.nickname} onChange={handleNicknameChange} required className="pl-10 h-12 text-base" autoComplete="username" />
+                    </div>
+                    {nicknameError && <p className="text-xs text-destructive">{nicknameError}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="signup-password" className="text-sm font-medium">Password</label>
-                    <div className="relative">
-                        <Input 
-                          id="signup-password"
-                          name="password"
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="Create a secure password" 
-                          value={formData.password} 
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
-                          required 
-                          className="bg-background/50 pr-10"
-                          autoComplete="new-password"
-                        />
-                        <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
+                    <label htmlFor="signup-password" className="text-sm font-medium text-muted-foreground">Password</label>
+                    <div className="relative flex items-center">
+                        <Lock className="absolute left-3 w-5 h-5 text-muted-foreground" />
+                        <Input id="signup-password" name="password" type={showPassword ? "text" : "password"} placeholder="Create a secure password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required className="pl-10 h-12 text-base pr-10" autoComplete="new-password" />
+                        <button type="button" className="absolute right-3" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <EyeOff className="w-5 h-5 text-muted-foreground" /> : <Eye className="w-5 h-5 text-muted-foreground" />}
+                        </button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating Account..." : "Create Account"}
+                  <Button type="submit" className="w-full h-12 text-lg font-semibold hover:bg-primary/90" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>
               
+              {/* Sign In Form */}
               <TabsContent value="signin">
-                <form onSubmit={(e) => handleSubmit(e, 'signin')} className="space-y-4 pt-4">
+                <form onSubmit={(e) => handleSubmit(e, 'signin')} className="space-y-6 pt-6">
                    <div className="space-y-2">
-                    <label htmlFor="signin-nickname" className="text-sm font-medium">Nickname</label>
-                    <Input
-                      id="signin-nickname"
-                      name="nickname"
-                      type="text"
-                      placeholder="Your nickname"
-                      value={formData.nickname}
-                      onChange={handleNicknameChange}
-                      required
-                      className="bg-background/50"
-                      autoComplete="username"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="signin-password" className="text-sm font-medium">Password</label>
-                    <div className="relative">
-                       <Input 
-                          id="signin-password"
-                          name="password"
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="Your password" 
-                          value={formData.password} 
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })} 
-                          required 
-                          className="bg-background/50 pr-10"
-                          autoComplete="current-password"
-                        />
-                       <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                       </Button>
+                    <label htmlFor="signin-nickname" className="text-sm font-medium text-muted-foreground">Nickname</label>
+                    <div className="relative flex items-center">
+                        <User className="absolute left-3 w-5 h-5 text-muted-foreground" />
+                        <Input id="signin-nickname" name="nickname" type="text" placeholder="Your nickname" value={formData.nickname} onChange={handleNicknameChange} required className="pl-10 h-12 text-base" autoComplete="username" />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing In..." : "Sign In"}
+                  <div className="space-y-2">
+                    <label htmlFor="signin-password" className="text-sm font-medium text-muted-foreground">Password</label>
+                    <div className="relative flex items-center">
+                       <Lock className="absolute left-3 w-5 h-5 text-muted-foreground" />
+                       <Input id="signin-password" name="password" type={showPassword ? "text" : "password"} placeholder="Your password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required className="pl-10 h-12 text-base pr-10" autoComplete="current-password" />
+                       <button type="button" className="absolute right-3" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <EyeOff className="w-5 h-5 text-muted-foreground" /> : <Eye className="w-5 h-5 text-muted-foreground" />}
+                       </button>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full h-12 text-lg font-semibold hover:bg-primary/90" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
-        <p className="text-center text-xs text-muted-foreground mt-6">By joining OneTalk, you agree to maintain a supportive and respectful environment for everyone.</p>
       </div>
     </div>
   );
