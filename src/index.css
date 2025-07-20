@@ -2,132 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    /* Calming colors for mental health support */
-    --background: 210 20% 98%;
-    --foreground: 210 10% 23%;
+    /* Bảng màu Tím khói - Chế độ Sáng */
+    --background: 264 30% 98%; /* Tím rất nhạt, gần như trắng */
+    --foreground: 271 11% 15%; /* Tím than đậm cho văn bản */
 
-    --card: 210 15% 97%;
-    --card-foreground: 210 10% 23%;
+    --card: 264 30% 98%;
+    --card-foreground: 271 11% 15%;
+ 
+    --popover: 264 30% 98%;
+    --popover-foreground: 271 11% 15%;
+ 
+    --primary: 271 11% 42%; /* Màu chủ đạo: #6C5B7B */
+    --primary-foreground: 264 27% 91%; /* Màu chữ trên nền primary: #E5E1EE */
+ 
+    --secondary: 264 27% 91%; /* Biến thể: #E5E1EE */
+    --secondary-foreground: 271 11% 42%;
+ 
+    --muted: 264 27% 95%; /* Tím nhạt hơn một chút */
+    --muted-foreground: 271 11% 45%;
+ 
+    --accent: 279 26% 71%; /* Biến thể: #BBA0CA */
+    --accent-foreground: 271 11% 15%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
-    --popover: 210 15% 97%;
-    --popover-foreground: 210 10% 23%;
-
-    /* Soft, trustworthy primary color */
-    --primary: 210 70% 45%;
-    --primary-foreground: 210 20% 98%;
-
-    /* Gentle secondary tones */
-    --secondary: 180 15% 94%;
-    --secondary-foreground: 210 10% 23%;
-
-    --muted: 210 15% 95%;
-    --muted-foreground: 210 8% 50%;
-
-    --accent: 170 40% 92%;
-    --accent-foreground: 210 10% 23%;
-
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 210 20% 98%;
-
-    --border: 210 15% 90%;
-    --input: 210 15% 90%;
-    --ring: 210 70% 45%;
-
-    /* OneTalk specific colors */
-    --safe-green: 140 60% 60%;
-    --warm-orange: 30 85% 65%;
-    --calm-purple: 260 40% 70%;
-    --soft-blue: 210 70% 75%;
-    --trust-teal: 180 50% 60%;
-    --emergency-red: 0 85% 60%;
-
-    /* Gradients for beautiful backgrounds */
-    --gradient-calm: linear-gradient(135deg, hsl(210 70% 92%), hsl(180 40% 95%));
-    --gradient-safe: linear-gradient(135deg, hsl(140 60% 92%), hsl(170 50% 95%));
-    --gradient-warm: linear-gradient(135deg, hsl(30 85% 92%), hsl(45 70% 95%));
-
+    --border: 271 11% 88%;
+    --input: 271 11% 92%;
+    --ring: 271 11% 42%;
+ 
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
-
+ 
   .dark {
-    /* Dark mode with calming tones */
-    --background: 210 15% 8%;
-    --foreground: 210 15% 92%;
-
-    --card: 210 15% 10%;
-    --card-foreground: 210 15% 92%;
-
-    --popover: 210 15% 10%;
-    --popover-foreground: 210 15% 92%;
-
-    --primary: 210 70% 65%;
-    --primary-foreground: 210 15% 8%;
-
-    --secondary: 210 15% 15%;
-    --secondary-foreground: 210 15% 92%;
-
-    --muted: 210 15% 15%;
-    --muted-foreground: 210 10% 70%;
-
-    --accent: 210 15% 15%;
-    --accent-foreground: 210 15% 92%;
-
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 210 15% 92%;
-
-    --border: 210 15% 18%;
-    --input: 210 15% 18%;
-    --ring: 210 70% 65%;
-
-    /* Dark mode OneTalk colors */
-    --safe-green: 140 50% 55%;
-    --warm-orange: 30 75% 60%;
-    --calm-purple: 260 35% 65%;
-    --soft-blue: 210 60% 70%;
-    --trust-teal: 180 45% 55%;
-    --emergency-red: 0 75% 55%;
-
-    --gradient-calm: linear-gradient(135deg, hsl(210 15% 12%), hsl(180 20% 15%));
-    --gradient-safe: linear-gradient(135deg, hsl(140 30% 12%), hsl(170 25% 15%));
-    --gradient-warm: linear-gradient(135deg, hsl(30 40% 12%), hsl(45 35% 15%));
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Bảng màu Tím than - Chế độ Tối */
+    --background: 271 11% 10%; /* Nền tím than rất đậm */
+    --foreground: 264 27% 91%; /* Chữ màu tím khói nhạt */
+ 
+    --card: 271 11% 15%;
+    --card-foreground: 264 27% 91%;
+ 
+    --popover: 271 11% 15%;
+    --popover-foreground: 264 27% 91%;
+ 
+    --primary: 271 11% 55%; /* Màu primary sáng hơn để có độ tương phản */
+    --primary-foreground: 264 27% 95%;
+ 
+    --secondary: 271 11% 20%;
+    --secondary-foreground: 264 27% 91%;
+ 
+    --muted: 271 11% 18%;
+    --muted-foreground: 271 11% 60%;
+ 
+    --accent: 279 26% 65%; /* Màu accent tối hơn một chút */
+    --accent-foreground: 271 11% 10%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+ 
+    --border: 271 11% 20%;
+    --input: 271 11% 22%;
+    --ring: 271 11% 55%;
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
