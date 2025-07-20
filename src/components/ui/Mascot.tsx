@@ -6,32 +6,39 @@ interface MascotProps extends React.SVGProps<SVGSVGElement> {
   className?: string
 }
 
-const Mascot = ({
+export default function Mascot({
   variant = 'happy',
   className,
   ...props
-}: MascotProps) => {
-  const variantClasses = {
+}: MascotProps) {
+  const colorClass = {
     happy: 'text-[--primary]',    // #6C5B7B
     waiting: 'text-[--accent]',   // #A9A1BD
     typing: 'text-[--primary]',
-  }
+  }[variant]
 
   return (
     <svg
+      viewBox="0 0 110 100"
+      className={cn(colorClass, className)}
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 110 90"
-      className={cn('transition-colors duration-300', variantClasses[variant], className)}
       {...props}
     >
-      {/* Thân bubble */}
+      {/* Body as an ellipse */}
+      <ellipse
+        cx="55" cy="50"
+        rx="45" ry="40"
+        fill="currentColor"
+        stroke="#3B2D4C"
+        strokeWidth="6"
+      />
+
+      {/* Tail: simple sharp triangle */}
       <path
         d="
-          M55,5
-          C25,5 5,30 5,55
-          C5,80 25,90 55,90
-          C85,90 105,70 105,55
-          C105,30 85,5 55,5
+          M75,60
+          L95,75
+          L78,70
           Z
         "
         fill="currentColor"
@@ -40,23 +47,14 @@ const Mascot = ({
         strokeLinejoin="round"
       />
 
-      {/* Tail nhọn, dài */}
-      <path
-        d="M80,60 L100,85 L75,75 Z"
-        fill="currentColor"
-        stroke="#3B2D4C"
-        strokeWidth="6"
-        strokeLinejoin="round"
-      />
+      {/* Eyes */}
+      <circle cx="45" cy="45" r="5" fill="#3B2D4C" />
+      <circle cx="65" cy="45" r="5" fill="#3B2D4C" />
 
-      {/* Mắt */}
-      <circle cx="40" cy="45" r="5" fill="#3B2D4C" />
-      <circle cx="70" cy="45" r="5" fill="#3B2D4C" />
-
-      {/* Miệng / Typing */}
+      {/* Mouth or typing dots */}
       {variant === 'happy' && (
         <path
-          d="M Forty-five,60 Q55,70 65,60"
+          d="M45,60 Q55,70 65,60"
           stroke="#3B2D4C"
           strokeWidth="4"
           fill="none"
@@ -74,13 +72,12 @@ const Mascot = ({
       )}
       {variant === 'typing' && (
         <g fill="#3B2D4C">
-          <circle cx="45" cy="65" r="4" />
-          <circle cx="55" cy="65" r="4" />
-          <circle cx="65" cy="65" r="4" />
+          <circle cx="45" cy="62" r="4" />
+          <circle cx="55" cy="62" r="4" />
+          <circle cx="65" cy="62" r="4" />
         </g>
       )}
     </svg>
   )
 }
-
 export default Mascot
