@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,10 +15,10 @@ import {
   LogOut,
   Star,
   ShieldCheck,
-  Ear,
-  Loader2 // Thêm Loader2 vào đây
+  Ear
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import Mascot from "@/components/ui/Mascot"; // Thêm import Mascot
 
 interface Topic {
   id: string;
@@ -66,10 +66,10 @@ export default function Dashboard() {
   };
 
   if (authLoading || !profile) {
-    // Cập nhật màn hình chờ để sử dụng Loader2
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background text-center">
-        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+        {/* === THAY THẾ LOADER2 BẰNG MASCOT === */}
+        <Mascot variant="waiting" className="w-24 h-24 animate-pulse text-primary mb-4" />
         <p className="text-muted-foreground">Loading your dashboard...</p>
       </div>
     );
