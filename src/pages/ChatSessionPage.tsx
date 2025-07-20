@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { Send, LogOut, Loader2, Clock } from 'lucide-react';
+import Mascot from '@/components/ui/Mascot'; // Import component Mascot
 
 interface Message {
   id: string;
@@ -16,7 +17,6 @@ interface Message {
   profiles: { nickname: string };
 }
 
-// Cập nhật để có cả status
 interface SessionInfo {
   seeker_id: string;
   created_at: string;
@@ -49,18 +49,13 @@ export default function ChatSessionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Dùng useCallback để ổn định hàm, tránh kích hoạt lại useEffect không cần thiết
   const handleEndChat = useCallback(async (showToast = true) => {
     if (!sessionId || !sessionInfo) return;
-    // Ngăn việc gọi lại nếu session đã kết thúc
     if (sessionInfo.status === 'completed') return;
-
     await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
-    
     if (showToast) {
         toast({ title: "Chat Ended", description: "The session has been completed." });
     }
-
     if (profile?.id === sessionInfo.seeker_id) {
         navigate(`/rate/${sessionId}`);
     } else {
@@ -68,71 +63,46 @@ export default function ChatSessionPage() {
     }
   }, [sessionId, profile, sessionInfo, navigate]);
 
-  // useEffect này chỉ chạy 1 lần để lấy dữ liệu ban đầu
   useEffect(() => {
     if (!sessionId) return;
-    
     const fetchInitialData = async () => {
       setLoading(true);
-      const { data: sessionData, error: sessionError } = await supabase
-        .from('chat_sessions')
-        .select('seeker_id, created_at, duration_minutes, status')
-        .eq('id', sessionId)
-        .single();
-
+      const { data: sessionData, error: sessionError } = await supabase.from('chat_sessions').select('seeker_id, created_at, duration_minutes, status').eq('id', sessionId).single();
       if (sessionError || !sessionData || sessionData.status === 'completed') {
         toast({ title: "Session Ended", description: "This chat session is no longer active.", variant: "destructive" });
         navigate('/dashboard');
         return;
       }
       setSessionInfo(sessionData);
-
-      const { data: messagesData, error: messagesError } = await supabase
-        .from('messages')
-        .select('*, profiles(nickname)')
-        .eq('session_id', sessionId)
-        .order('created_at', { ascending: true });
-
-      if (messagesError) {
-        console.error("Error fetching messages:", messagesError);
-      } else {
-        setMessages(messagesData as Message[]);
-      }
-
+      const { data: messagesData, error: messagesError } = await supabase.from('messages').select('*, profiles(nickname)').eq('session_id', sessionId).order('created_at', { ascending: true });
+      if (messagesError) console.error("Error fetching messages:", messagesError);
+      else setMessages(messagesData as Message[]);
       const startTime = new Date(sessionData.created_at).getTime();
       const durationSeconds = sessionData.duration_minutes * 60;
       const now = new Date().getTime();
       const elapsedSeconds = Math.floor((now - startTime) / 1000);
       setTimeLeft(durationSeconds - elapsedSeconds);
-      
       setLoading(false);
     };
-
     fetchInitialData();
   }, [sessionId, navigate]);
 
-  // useEffect này chỉ quản lý bộ đếm thời gian
   useEffect(() => {
     if (timeLeft === null) return;
     if (timeLeft <= 0) {
       if (timeLeft === 0) {
         toast({ title: "Time's up!", description: "The session has ended automatically." });
-        handleEndChat(false); // Kết thúc mà không cần toast thêm
+        handleEndChat(false);
       }
       return;
     }
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => (prevTime ? prevTime - 1 : 0));
-    }, 1000);
+    const timer = setInterval(() => setTimeLeft((prevTime) => (prevTime ? prevTime - 1 : 0)), 1000);
     return () => clearInterval(timer);
   }, [timeLeft, handleEndChat]);
   
-  // useEffect này chỉ quản lý kết nối Realtime
   useEffect(() => {
     if (!sessionId) return;
-    
-    const channel = supabase
-      .channel(`chat-session-${sessionId}`)
+    const channel = supabase.channel(`chat-session-${sessionId}`)
       .on('postgres_changes', { event: 'INSERT', table: 'messages', filter: `session_id=eq.${sessionId}`}, (payload) => {
         const fetchNewMessage = async () => {
            const { data } = await supabase.from('messages').select('*, profiles(nickname)').eq('id', payload.new.id).single();
@@ -143,21 +113,14 @@ export default function ChatSessionPage() {
       .on('postgres_changes', { event: 'UPDATE', table: 'chat_sessions', filter: `id=eq.${sessionId}`}, (payload) => {
         if (payload.new.status === 'completed') {
           toast({ title: "Chat Ended", description: "The other user has ended the session." });
-          handleEndChat(false); // Gọi hàm đã ổn định, không hiển thị toast trùng lặp
+          handleEndChat(false);
         }
       })
-      .on('broadcast', { event: 'typing' }, (payload) => {
-          if (payload.payload.senderId !== profile?.id) setIsTyping(true);
-      })
-      .on('broadcast', { event: 'stopped-typing' }, (payload) => {
-          if (payload.payload.senderId !== profile?.id) setIsTyping(false);
-      })
+      .on('broadcast', { event: 'typing' }, (payload) => { if (payload.payload.senderId !== profile?.id) setIsTyping(true); })
+      .on('broadcast', { event: 'stopped-typing' }, (payload) => { if (payload.payload.senderId !== profile?.id) setIsTyping(false); })
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [sessionId, profile?.id, handleEndChat]); // Loại bỏ các dependency không cần thiết để tránh vòng lặp
+    return () => { supabase.removeChannel(channel); };
+  }, [sessionId, profile?.id, handleEndChat]);
 
   const handleTyping = () => {
     const channel = supabase.channel(`chat-session-${sessionId}`);
@@ -179,18 +142,15 @@ export default function ChatSessionPage() {
   };
 
   if (loading || timeLeft === null) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return ( <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> );
   }
 
   return (
     <div className="flex flex-col h-screen bg-background">
       <header className="flex items-center justify-between p-4 border-b shrink-0">
         <div className="flex items-center space-x-3">
-            <Avatar><AvatarFallback>O</AvatarFallback></Avatar>
+            {/* === THAY THẾ AVATAR BẰNG MASCOT === */}
+            <Mascot variant="talking" className="w-10 h-10" />
             <div>
                 <h2 className="text-lg font-bold">Chatting</h2>
                 <p className="text-xs text-muted-foreground">Session: {sessionId?.substring(0, 8)}</p>
@@ -212,7 +172,8 @@ export default function ChatSessionPage() {
         {messages.map((msg) => (
           <div key={msg.id} className={`flex items-end gap-2 ${ msg.sender_id === profile?.id ? 'justify-end' : 'justify-start' }`}>
             {msg.sender_id !== profile?.id && (
-                <Avatar className="w-8 h-8"><AvatarFallback>{msg.profiles?.nickname?.charAt(0).toUpperCase() || 'U'}</AvatarFallback></Avatar>
+                // === THAY THẾ AVATAR BẰNG MASCOT ===
+                <Mascot variant="listening" className="w-8 h-8" />
             )}
             <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${ msg.sender_id === profile?.id ? 'bg-primary text-primary-foreground' : 'bg-muted' }`}>
               <p className="text-sm break-words">{msg.content}</p>
@@ -222,7 +183,8 @@ export default function ChatSessionPage() {
         ))}
         {isTyping && (
           <div className="flex items-end gap-2 justify-start">
-              <Avatar className="w-8 h-8"><AvatarFallback>...</AvatarFallback></Avatar>
+              {/* === THAY THẾ AVATAR BẰNG MASCOT === */}
+              <Mascot variant="listening" className="w-8 h-8 opacity-70" />
               <div className="p-3 rounded-lg bg-muted animate-pulse">
                   <p className="text-sm italic text-muted-foreground">is typing...</p>
               </div>
