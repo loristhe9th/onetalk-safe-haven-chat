@@ -35,7 +35,7 @@ export default function Mascot({
 
       {/* Tail: simple sharp triangle */}
       <path
-        d="M95,65 L115,75 L95,80 Z"
+        d="M95,60 L115,70 L95,75 Z"
         fill="currentColor"
         stroke="#3B2D4C"
         strokeWidth="6"
