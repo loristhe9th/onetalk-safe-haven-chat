@@ -40,7 +40,7 @@ export default function Mascot({
         stroke="#3B2D4C"
         strokeWidth="6"
         strokeLinejoin="round"
-        transform="rotate(35 95 80)"
+        transform="rotate(30 95 80)"
       />
 
       {/* Eyes */}
