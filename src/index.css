@@ -4,67 +4,67 @@
 
 @layer base {
   :root {
-    /* Bảng màu Tím khói - Chế độ Sáng */
-    --background: 264 30% 98%; /* Tím rất nhạt, gần như trắng */
-    --foreground: 271 11% 15%; /* Tím than đậm cho văn bản */
+    /* Bảng màu OneTalk - Chế độ Sáng */
+    --background: 264 30% 98%;      /* Gần trắng, có sắc tím rất nhẹ */
+    --foreground: 270 5% 18%;       /* --text-main: #2D2A32 */
 
-    --card: 264 30% 98%;
-    --card-foreground: 271 11% 15%;
+    --card: 264 30% 100%;           /* Màu trắng tinh khiết cho Card */
+    --card-foreground: 270 5% 18%;
+
+    --popover: 264 30% 100%;
+    --popover-foreground: 270 5% 18%;
  
-    --popover: 264 30% 98%;
-    --popover-foreground: 271 11% 15%;
+    --primary: 271 11% 42%;         /* --primary: #6C5B7B */
+    --primary-foreground: 264 27% 91%; /* Chữ trắng ngà trên nền primary */
  
-    --primary: 271 11% 42%; /* Màu chủ đạo: #6C5B7B */
-    --primary-foreground: 264 27% 91%; /* Màu chữ trên nền primary: #E5E1EE */
- 
-    --secondary: 264 27% 91%; /* Biến thể: #E5E1EE */
+    --secondary: 264 27% 91%;       /* --accent-light: #E5E1EE */
     --secondary-foreground: 271 11% 42%;
  
-    --muted: 264 27% 95%; /* Tím nhạt hơn một chút */
-    --muted-foreground: 271 11% 45%;
+    --muted: 264 27% 95%;
+    --muted-foreground: 261 17% 55%; /* Biến thể của --secondary */
  
-    --accent: 279 26% 71%; /* Biến thể: #BBA0CA */
-    --accent-foreground: 271 11% 15%;
+    --accent: 279 26% 71%;          /* --accent-pink: #BBA0CA */
+    --accent-foreground: 270 5% 18%;
  
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 352 45% 62%;     /* --error: #D16A7A */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 271 11% 88%;
-    --input: 271 11% 92%;
+    --border: 264 27% 88%;
+    --input: 264 27% 91%;
     --ring: 271 11% 42%;
  
     --radius: 0.5rem;
   }
  
   .dark {
-    /* Bảng màu Tím than - Chế độ Tối */
-    --background: 271 11% 10%; /* Nền tím than rất đậm */
-    --foreground: 264 27% 91%; /* Chữ màu tím khói nhạt */
+    /* Bảng màu OneTalk - Chế độ Tối */
+    --background: 270 5% 12%;       /* Nền tím than đậm */
+    --foreground: 264 27% 85%;      /* Chữ màu tím khói rất nhạt */
  
-    --card: 271 11% 15%;
-    --card-foreground: 264 27% 91%;
+    --card: 270 5% 15%;
+    --card-foreground: 264 27% 85%;
  
-    --popover: 271 11% 15%;
-    --popover-foreground: 264 27% 91%;
+    --popover: 270 5% 15%;
+    --popover-foreground: 264 27% 85%;
  
-    --primary: 271 11% 55%; /* Màu primary sáng hơn để có độ tương phản */
-    --primary-foreground: 264 27% 95%;
+    --primary: 261 17% 71%;         /* --secondary: #A9A1BD, sáng hơn trong dark mode */
+    --primary-foreground: 270 5% 12%;
  
-    --secondary: 271 11% 20%;
-    --secondary-foreground: 264 27% 91%;
+    --secondary: 271 11% 25%;
+    --secondary-foreground: 264 27% 85%;
  
-    --muted: 271 11% 18%;
+    --muted: 271 11% 22%;
     --muted-foreground: 271 11% 60%;
  
-    --accent: 279 26% 65%; /* Màu accent tối hơn một chút */
-    --accent-foreground: 271 11% 10%;
+    --accent: 279 26% 71%;          /* --accent-pink: #BBA0CA */
+    --accent-foreground: 270 5% 12%;
  
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 352 45% 62%;
+    --destructive-foreground: 0 0% 100%;
  
-    --border: 271 11% 20%;
-    --input: 271 11% 22%;
-    --ring: 271 11% 55%;
+    --border: 271 11% 25%;
+    --input: 271 11% 28%;
+    --ring: 261 17% 71%;
   }
 }
  
