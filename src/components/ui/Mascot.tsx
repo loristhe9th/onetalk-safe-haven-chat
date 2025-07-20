@@ -19,14 +19,14 @@ export default function Mascot({
 
   return (
     <svg
-      viewBox="0 0 110 100"
+      viewBox="0 0 120 100"
       className={cn(colorClass, className)}
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
       {/* Body as an ellipse */}
       <ellipse
-        cx="55" cy="50"
+        cx="60" cy="50"
         rx="45" ry="40"
         fill="currentColor"
         stroke="#3B2D4C"
@@ -35,12 +35,7 @@ export default function Mascot({
 
       {/* Tail: simple sharp triangle */}
       <path
-        d="
-          M75,60
-          L95,75
-          L78,70
-          Z
-        "
+        d="M95,70 L115,80 L95,85 Z"
         fill="currentColor"
         stroke="#3B2D4C"
         strokeWidth="6"
