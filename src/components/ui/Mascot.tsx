@@ -1,35 +1,37 @@
-import React from 'react';
-import { cn } from "@/lib/utils"; 
+import React from 'react'
+import { cn } from '@/lib/utils'
 
 interface MascotProps extends React.SVGProps<SVGSVGElement> {
-  variant?: 'happy' | 'waiting' | 'typing';
-  className?: string;
+  variant?: 'happy' | 'waiting' | 'typing'
+  className?: string
 }
 
-const Mascot = ({ variant = 'happy', className, ...props }: MascotProps) => {
+const Mascot = ({
+  variant = 'happy',
+  className,
+  ...props
+}: MascotProps) => {
   const variantClasses = {
-    happy: "text-[--primary]",      // #6C5B7B
-    waiting: "text-[--accent]",     // #A9A1BD
-    typing: "text-[--primary]",
-  };
+    happy: 'text-[--primary]',    // #6C5B7B
+    waiting: 'text-[--accent]',   // #A9A1BD
+    typing: 'text-[--primary]',
+  }
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 100"
-      className={cn("transition-colors duration-300", variantClasses[variant], className)}
+      viewBox="0 0 110 90"
+      className={cn('transition-colors duration-300', variantClasses[variant], className)}
       {...props}
     >
-      {/* Bubble shape */}
+      {/* Thân bubble */}
       <path
         d="
-          M50,5 
-          C25,5 5,25 5,50 
-          C5,75 25,95 50,95 
-          C72,95 85,85 90,70 
-          C92,78 98,76 95,60 
-          C98,55 95,52 95,50 
-          C95,25 75,5 50,5 
+          M55,5
+          C25,5 5,30 5,55
+          C5,80 25,90 55,90
+          C85,90 105,70 105,55
+          C105,30 85,5 55,5
           Z
         "
         fill="currentColor"
@@ -38,14 +40,23 @@ const Mascot = ({ variant = 'happy', className, ...props }: MascotProps) => {
         strokeLinejoin="round"
       />
 
-      {/* Eyes */}
-      <circle cx="38" cy="42" r="5" fill="#3B2D4C" />
-      <circle cx="62" cy="42" r="5" fill="#3B2D4C" />
+      {/* Tail nhọn, dài */}
+      <path
+        d="M80,60 L100,85 L75,75 Z"
+        fill="currentColor"
+        stroke="#3B2D4C"
+        strokeWidth="6"
+        strokeLinejoin="round"
+      />
 
-      {/* Mouth / Dots */}
+      {/* Mắt */}
+      <circle cx="40" cy="45" r="5" fill="#3B2D4C" />
+      <circle cx="70" cy="45" r="5" fill="#3B2D4C" />
+
+      {/* Miệng / Typing */}
       {variant === 'happy' && (
         <path
-          d="M40,60 Q50,70 60,60"
+          d="M Forty-five,60 Q55,70 65,60"
           stroke="#3B2D4C"
           strokeWidth="4"
           fill="none"
@@ -54,7 +65,7 @@ const Mascot = ({ variant = 'happy', className, ...props }: MascotProps) => {
       )}
       {variant === 'waiting' && (
         <path
-          d="M40,65 Q50,58 60,65"
+          d="M45,65 Q55,58 65,65"
           stroke="#3B2D4C"
           strokeWidth="4"
           fill="none"
@@ -63,13 +74,13 @@ const Mascot = ({ variant = 'happy', className, ...props }: MascotProps) => {
       )}
       {variant === 'typing' && (
         <g fill="#3B2D4C">
-          <circle cx="38" cy="62" r="4" />
-          <circle cx="50" cy="62" r="4" />
-          <circle cx="62" cy="62" r="4" />
+          <circle cx="45" cy="65" r="4" />
+          <circle cx="55" cy="65" r="4" />
+          <circle cx="65" cy="65" r="4" />
         </g>
       )}
     </svg>
-  );
-};
+  )
+}
 
-export default Mascot;
+export default Mascot
