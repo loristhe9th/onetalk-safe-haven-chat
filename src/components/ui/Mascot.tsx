@@ -80,4 +80,3 @@ export default function Mascot({
     </svg>
   )
 }
-export default Mascot
