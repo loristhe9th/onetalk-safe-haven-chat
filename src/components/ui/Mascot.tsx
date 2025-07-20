@@ -18,35 +18,32 @@ const Mascot = ({ variant = 'happy', className, ...props }: MascotProps) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 100 90" // Tỷ lệ oval ngang hơn
-      className={cn("transition-colors duration-300 opacity-95", variantClasses[variant], className)}
+      viewBox="0 0 100 100" // Giữ tỷ lệ vuông để dễ dàng căn chỉnh
+      className={cn("transition-colors duration-300", variantClasses[variant], className)}
       {...props}
     >
       {/* Thân bubble được vẽ lại cho mềm mại và có đuôi cong */}
       <path
         fill="currentColor"
-        stroke="#3B2D4C"
-        strokeWidth="4"
-        strokeLinejoin="round"
-        d="M90,41 C90,59.23 72.09,75 50,75 C36.5,75 24.5,68 18,58 C22,62 28,61 29,55 C33,50 30,45 30,41 C30,22.77 47.91,7 70,7 C82.09,7 90,17.77 90,30 C90,33 89,37 87,40 C89,39 90,37 90,35 C90,30 87,26 83,24 C87,29 90,35 90,41Z"
+        d="M50,5 C25.15,5 5,25.15 5,50 C5,74.85 25.15,95 50,95 C68,95 83.5,85 91,72 C94,79 99,78 96,70 C99,65 95,62 95,50 C95,25.15 74.85,5 50,5 Z"
       />
       
       {/* Mắt và miệng sử dụng màu tím than đậm #3B2D4C */}
-      <circle cx="45" cy="40" r="7" fill="#3B2D4C" />
-      <circle cx="65" cy="40" r="7" fill="#3B2D4C" />
+      <circle cx="42" cy="45" r="5" fill="#3B2D4C" />
+      <circle cx="62" cy="45" r="5" fill="#3B2D4C" />
 
       {/* Biểu cảm miệng thay đổi theo variant */}
       {variant === 'happy' && (
-        <path d="M48 55 Q 55 65 62 55" stroke="#3B2D4C" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+        <path d="M45 62 Q 52 72 59 62" stroke="#3B2D4C" strokeWidth="3" fill="none" strokeLinecap="round" />
       )}
       {variant === 'waiting' && (
-        <path d="M48 58 Q 55 52 62 58" stroke="#3B2D4C" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+        <path d="M45 65 Q 52 58 59 65" stroke="#3B2D4C" strokeWidth="3" fill="none" strokeLinecap="round" />
       )}
       {variant === 'typing' && (
         <g fill="#3B2D4C">
-            <circle cx="45" cy="58" r="3.5" />
-            <circle cx="55" cy="58" r="3.5" />
-            <circle cx="65" cy="58" r="3.5" />
+            <circle cx="42" cy="62" r="4" />
+            <circle cx="52" cy="62" r="4" />
+            <circle cx="62" cy="62" r="4" />
         </g>
       )}
     </svg>
