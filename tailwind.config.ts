@@ -18,6 +18,10 @@ export default {
             }
         },
         extend: {
+            // === THÊM HIỆU ỨNG BOX SHADOW MỚI ===
+            boxShadow: {
+                'card-depth': '0 4px 12px rgba(0, 0, 0, 0.25)',
+            },
             colors: {
                 border: 'hsl(var(--border))',
                 input: 'hsl(var(--input))',
@@ -35,11 +39,6 @@ export default {
                 destructive: {
                     DEFAULT: 'hsl(var(--destructive))',
                     foreground: 'hsl(var(--destructive-foreground))'
-                },
-                // === THÊM MÀU SUCCESS MỚI ===
-                success: {
-                    DEFAULT: 'hsl(var(--success))',
-                    foreground: 'hsl(var(--success-foreground))'
                 },
                 muted: {
                     DEFAULT: 'hsl(var(--muted))',
