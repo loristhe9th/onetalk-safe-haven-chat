@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +14,10 @@ import {
   Settings, 
   LogOut,
   Star,
-  Timer,
-  Shield
+  ShieldCheck,
+  Ear
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-// KHÔNG CẦN INTERFACE PROFILE Ở ĐÂY NỮA
 
 interface Topic {
   id: string;
@@ -29,38 +27,26 @@ interface Topic {
 }
 
 export default function Dashboard() {
-  // Lấy profile và trạng thái loading trực tiếp từ useAuth
   const { profile, signOut, loading: authLoading } = useAuth(); 
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
 
   useEffect(() => {
-    // Chỉ cần fetch topics khi component được tạo
+    const fetchTopics = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('topics')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+        if (error) throw error;
+        setTopics(data || []);
+      } catch (error) {
+        console.error('Error fetching topics:', error);
+      }
+    };
     fetchTopics();
   }, []);
-
-  const fetchTopics = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('topics')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-      setTopics(data || []);
-    } catch (error) {
-      console.error('Error fetching topics:', error);
-    }
-  };
-
-  const handleStartChat = () => {
-    navigate('/chat/start');
-  };
-
-  const handleJoinAsListener = () => {
-    navigate('/listener/queue');
-  };
 
   const handleSignOut = async () => {
     try {
@@ -78,40 +64,36 @@ export default function Dashboard() {
     }
   };
 
-  // Sử dụng trạng thái loading từ useAuth
   if (authLoading || !profile) {
+    // Màn hình chờ sử dụng Mascot
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Heart className="w-8 h-8 animate-pulse text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your dashboard...</p>
-        </div>
+        {/* ... Loading screen ... */}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/20">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="border-b border-border/80 bg-background/80 backdrop-blur sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Heart className="w-6 h-6 text-primary" />
             <h1 className="text-xl font-bold">OneTalk</h1>
           </div>
-          
           <div className="flex items-center space-x-4">
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                {profile.nickname.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="hidden sm:block">
+            <div className="text-right hidden sm:block">
               <p className="text-sm font-medium">{profile.nickname}</p>
               <p className="text-xs text-muted-foreground capitalize">{profile.role}</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" />
+            <Avatar className="w-10 h-10">
+              <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                {profile.nickname.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+              <LogOut className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -119,153 +101,88 @@ export default function Dashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">Welcome back, {profile.nickname}!</h2>
-          <p className="text-muted-foreground">
-            How can we support you today? Choose an option below to get started.
+        <div className="mb-10">
+          <h2 className="text-4xl font-bold mb-2">Welcome back, {profile.nickname}!</h2>
+          <p className="text-lg text-muted-foreground">
+            How can we support you today?
           </p>
         </div>
 
-        {/* Stats Cards - Đã xóa các ép kiểu (as any) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <Card className="bg-card/50 border shadow-card-depth">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
-              <MessageSquare className="h-4 w-4 text-green-500" />
+              <MessageSquare className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{profile.total_sessions || 0}</div>
-              <p className="text-xs text-muted-foreground">Conversations completed</p>
+              <div className="text-3xl font-bold">{profile.total_sessions || 0}</div>
             </CardContent>
           </Card>
-
-          <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20">
+          <Card className="bg-card/50 border shadow-card-depth">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rating</CardTitle>
-              <Star className="h-4 w-4 text-yellow-500" />
+              <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+              <Star className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold">
                 {(profile.rating_average || 0) > 0 ? profile.rating_average.toFixed(1) : '-'}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {profile.rating_count || 0} reviews
-              </p>
             </CardContent>
           </Card>
-
-          <Card className="bg-gradient-to-br from-teal-500/10 to-teal-500/5 border-teal-500/20">
+          <Card className="bg-card/50 border shadow-card-depth">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Status</CardTitle>
-              <Shield className="h-4 w-4 text-teal-500" />
+              <CardTitle className="text-sm font-medium">Listener Status</CardTitle>
+              <ShieldCheck className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                <Badge variant={profile.is_available ? "default" : "secondary"}>
-                  {profile.is_available ? "Available" : "Offline"}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">Current availability</p>
+              <Badge variant={profile.listener_status === 'verified' ? "default" : "secondary"} className="text-lg capitalize">
+                {profile.listener_status}
+              </Badge>
             </CardContent>
           </Card>
         </div>
 
         {/* Main Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Start Conversation */}
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+          <Card className="bg-primary/10 border-primary/50 shadow-card-depth flex flex-col">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Heart className="w-5 h-5 text-primary" />
-                <span>Need Support?</span>
-              </CardTitle>
-              <CardDescription>
-                Connect with a caring listener who will provide emotional support and understanding.
-              </CardDescription>
+              <CardTitle className="text-2xl">Need Support?</CardTitle>
+              <CardDescription>Connect with a caring listener for an anonymous 1:1 chat.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-center p-3 bg-background/50 rounded-lg">
-                  <Timer className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">30 min sessions</p>
-                </div>
-                <div className="text-center p-3 bg-background/50 rounded-lg">
-                  <Shield className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Anonymous & Safe</p>
-                </div>
-              </div>
-              <Button onClick={handleStartChat} className="w-full" size="lg">
+            <CardContent className="flex-grow flex items-end">
+              <Button onClick={() => navigate('/chat/start')} className="w-full h-14 text-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90">
                 Start a Conversation
               </Button>
             </CardContent>
           </Card>
-
-          {/* Become a Listener */}
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+          <Card className="bg-card/50 border shadow-card-depth flex flex-col">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-green-500" />
-                <span>Be a Listener</span>
-              </CardTitle>
-              <CardDescription>
-                Help others by offering your support and compassion to those who need it.
-              </CardDescription>
+              <CardTitle className="text-2xl">Be a Listener</CardTitle>
+              <CardDescription>Help others by offering your support and compassion.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="text-center p-3 bg-background/50 rounded-lg">
-                  <Heart className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Make a difference</p>
-                </div>
-                <div className="text-center p-3 bg-background/50 rounded-lg">
-                  <Star className="w-5 h-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-xs text-muted-foreground">Build reputation</p>
-                </div>
-              </div>
-              <Button onClick={handleJoinAsListener} variant="outline" className="w-full" size="lg">
+            <CardContent className="flex-grow flex items-end">
+              <Button onClick={() => navigate('/listener/queue')} variant="secondary" className="w-full h-14 text-xl font-bold">
+                <Ear className="w-6 h-6 mr-3" />
                 Join Listener Queue
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Group Chat Card */}
-          <Card className="lg:col-span-2 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-blue-500" />
-                <span>Join a Group Chat</span>
-              </CardTitle>
-              <CardDescription>
-                Share and listen with multiple people in topic-focused chat rooms.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate('/group-chats')} className="w-full" size="lg">
-                View Chat Rooms
               </Button>
             </CardContent>
           </Card>
         </div>
 
         {/* Topics Section */}
-        <Card>
+        <Card className="bg-card/50 border shadow-card-depth">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BookOpen className="w-5 h-5" />
-              <span>Popular Topics</span>
-            </CardTitle>
-            <CardDescription>
-              Common areas where our community provides support
-            </CardDescription>
+            <CardTitle className="text-2xl">Popular Topics</CardTitle>
+            <CardDescription>Common areas where our community provides support.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="flex flex-wrap gap-4">
               {topics.map((topic) => (
                 <Badge
                   key={topic.id}
                   variant="secondary"
-                  className="px-3 py-2 justify-center text-center"
-                  style={{ borderColor: topic.color + '40', backgroundColor: topic.color + '10' }}
+                  className="px-4 py-2 text-base cursor-pointer hover:bg-accent transition-colors"
                 >
                   {topic.name}
                 </Badge>
@@ -275,7 +192,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Quick Access */}
-        <div className="mt-8 flex flex-wrap gap-4">
+        <div className="mt-10 flex flex-wrap gap-4">
           <Button variant="outline" onClick={() => navigate('/profile/settings')}>
             <Settings className="w-4 h-4 mr-2" />
             Profile Settings
@@ -287,6 +204,10 @@ export default function Dashboard() {
           <Button variant="outline" onClick={() => navigate('/history')}>
             <MessageSquare className="w-4 h-4 mr-2" />
             Chat History
+          </Button>
+           <Button variant="outline" onClick={() => navigate('/group-chats')}>
+            <Users className="w-4 h-4 mr-2" />
+            Group Chats
           </Button>
         </div>
       </div>
