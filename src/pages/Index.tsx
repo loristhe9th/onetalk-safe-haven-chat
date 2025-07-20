@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Heart, Shield, Users } from 'lucide-react';
+import Mascot from '@/components/ui/Mascot'; // Import component Mascot
 
 const Index = () => {
   const navigate = useNavigate();
@@ -11,9 +12,9 @@ const Index = () => {
 
         {/* --- Phần Header --- */}
         <header className="mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-6 animate-pulse">
-            <Heart className="w-10 h-10 text-primary" />
-          </div>
+          {/* === THAY THẾ ICON HEART BẰNG MASCOT === */}
+          <Mascot variant="happy" className="w-24 h-24 mx-auto mb-6" />
+          
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
             Chào mừng đến với OneTalk
           </h1>
