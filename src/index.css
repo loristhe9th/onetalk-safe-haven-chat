@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    /* Bảng màu OneTalk Tím Than - Dark Mode */
-    --background: 270 25% 11%;      /* --text-main: #3B2D4C (làm nền) */
-    --foreground: 264 30% 88%;      /* --accent-light: #E5E1EE (làm màu chữ) */
+    /* Bảng màu OneTalk UI Refresh - Dark Mode */
+    --background: 270 25% 11%;      /* Màu nền tối nhất #1C1424 */
+    --foreground: 264 30% 88%;      /* Màu chữ chính #E5E1EE */
 
     --card: 270 25% 15%;            /* Nền card tối hơn một chút */
     --card-foreground: 264 30% 88%;
@@ -14,26 +14,26 @@
     --popover: 270 25% 15%;
     --popover-foreground: 264 30% 88%;
  
-    --primary: 261 17% 71%;         /* --secondary: #A9A1BD (làm màu primary) */
-    --primary-foreground: 270 25% 11%;
+    --primary: 271 11% 42%;         /* Button chính #6C5B7B */
+    --primary-foreground: 0 0% 100%; /* Chữ trắng trên button chính */
  
-    --secondary: 271 11% 30%;       /* Tím đậm hơn cho button phụ */
+    --secondary: 271 11% 30%;       /* Button phụ */
     --secondary-foreground: 264 30% 88%;
  
     --muted: 271 11% 25%;
     --muted-foreground: 271 11% 65%;
  
-    --accent: 279 26% 71%;          /* --accent-pink: #BBA0CA */
+    --accent: 279 26% 71%;          /* Màu nhấn #BBA0CA */
     --accent-foreground: 270 25% 11%;
  
-    --destructive: 352 45% 62%;     /* --error: #D16A7A */
+    --destructive: 352 45% 62%;
     --destructive-foreground: 0 0% 100%;
  
-    --border: 271 11% 25%;
+    --border: 255 4% 35%;           /* Border sáng hơn một chút: rgba(255,255,255,0.1) */
     --input: 271 11% 28%;
-    --ring: 261 17% 71%;
+    --ring: 271 11% 42%;
  
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Tăng bo góc lên 12px */
   }
 }
  
@@ -42,6 +42,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    /* Thêm gradient cho nền trang */
+    @apply bg-gradient-to-br from-[#1C1424] to-[#2E1D3B] text-foreground;
   }
 }
