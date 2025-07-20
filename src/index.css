@@ -4,67 +4,36 @@
 
 @layer base {
   :root {
-    /* Bảng màu OneTalk - Chế độ Sáng */
-    --background: 264 30% 98%;      /* Gần trắng, có sắc tím rất nhẹ */
-    --foreground: 270 5% 18%;       /* --text-main: #2D2A32 */
+    /* Bảng màu OneTalk Tím Than - Dark Mode */
+    --background: 270 25% 11%;      /* --text-main: #3B2D4C (làm nền) */
+    --foreground: 264 30% 88%;      /* --accent-light: #E5E1EE (làm màu chữ) */
 
-    --card: 264 30% 100%;           /* Màu trắng tinh khiết cho Card */
-    --card-foreground: 270 5% 18%;
-
-    --popover: 264 30% 100%;
-    --popover-foreground: 270 5% 18%;
+    --card: 270 25% 15%;            /* Nền card tối hơn một chút */
+    --card-foreground: 264 30% 88%;
  
-    --primary: 271 11% 42%;         /* --primary: #6C5B7B */
-    --primary-foreground: 264 27% 91%; /* Chữ trắng ngà trên nền primary */
+    --popover: 270 25% 15%;
+    --popover-foreground: 264 30% 88%;
  
-    --secondary: 264 27% 91%;       /* --accent-light: #E5E1EE */
-    --secondary-foreground: 271 11% 42%;
+    --primary: 261 17% 71%;         /* --secondary: #A9A1BD (làm màu primary) */
+    --primary-foreground: 270 25% 11%;
  
-    --muted: 264 27% 95%;
-    --muted-foreground: 261 17% 55%; /* Biến thể của --secondary */
+    --secondary: 271 11% 30%;       /* Tím đậm hơn cho button phụ */
+    --secondary-foreground: 264 30% 88%;
+ 
+    --muted: 271 11% 25%;
+    --muted-foreground: 271 11% 65%;
  
     --accent: 279 26% 71%;          /* --accent-pink: #BBA0CA */
-    --accent-foreground: 270 5% 18%;
+    --accent-foreground: 270 25% 11%;
  
     --destructive: 352 45% 62%;     /* --error: #D16A7A */
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 264 27% 88%;
-    --input: 264 27% 91%;
-    --ring: 271 11% 42%;
- 
-    --radius: 0.5rem;
-  }
- 
-  .dark {
-    /* Bảng màu OneTalk - Chế độ Tối */
-    --background: 270 5% 12%;       /* Nền tím than đậm */
-    --foreground: 264 27% 85%;      /* Chữ màu tím khói rất nhạt */
- 
-    --card: 270 5% 15%;
-    --card-foreground: 264 27% 85%;
- 
-    --popover: 270 5% 15%;
-    --popover-foreground: 264 27% 85%;
- 
-    --primary: 261 17% 71%;         /* --secondary: #A9A1BD, sáng hơn trong dark mode */
-    --primary-foreground: 270 5% 12%;
- 
-    --secondary: 271 11% 25%;
-    --secondary-foreground: 264 27% 85%;
- 
-    --muted: 271 11% 22%;
-    --muted-foreground: 271 11% 60%;
- 
-    --accent: 279 26% 71%;          /* --accent-pink: #BBA0CA */
-    --accent-foreground: 270 5% 12%;
- 
-    --destructive: 352 45% 62%;
     --destructive-foreground: 0 0% 100%;
  
     --border: 271 11% 25%;
     --input: 271 11% 28%;
     --ring: 261 17% 71%;
+ 
+    --radius: 0.5rem;
   }
 }
  
