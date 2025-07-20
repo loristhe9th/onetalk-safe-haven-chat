@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Eye, EyeOff, User, Lock, Users, Shield, Heart } from "lucide-react";
+import { Eye, EyeOff, User, Lock, Users, Shield, Heart, Loader2 } from "lucide-react";
 import Mascot from '@/components/ui/Mascot';
 
 const DUMMY_DOMAIN = "@onetalk.app";
