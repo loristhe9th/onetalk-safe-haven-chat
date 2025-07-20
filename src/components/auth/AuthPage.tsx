@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Heart, Shield, Users } from "lucide-react";
+import Mascot from '@/components/ui/Mascot'; // Import component Mascot
 
 const DUMMY_DOMAIN = "@onetalk.app";
 
@@ -14,10 +15,7 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("signup");
-  const [formData, setFormData] = useState({
-    nickname: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ nickname: "", password: "" });
   const [nicknameError, setNicknameError] = useState("");
   const navigate = useNavigate();
 
@@ -58,17 +56,10 @@ export default function AuthPage() {
       let error = null;
 
       if (action === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: formData.password,
-          options: { data: { nickname: formData.nickname } },
-        });
+        const { error: signUpError } = await supabase.auth.signUp({ email, password: formData.password, options: { data: { nickname: formData.nickname } } });
         error = signUpError;
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password: formData.password,
-        });
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: formData.password });
         error = signInError;
       }
       
@@ -95,7 +86,8 @@ export default function AuthPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-accent/20 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4"><Heart className="w-8 h-8 text-primary" /></div>
+            {/* === THAY THẾ ICON HEART BẰNG MASCOT === */}
+            <Mascot variant="idle" className="w-20 h-20 mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-foreground mb-2">OneTalk</h1>
             <p className="text-muted-foreground">Your safe haven for anonymous support</p>
         </div>
@@ -130,6 +122,7 @@ export default function AuthPage() {
                       onChange={handleNicknameChange}
                       required
                       className={`bg-background/50 ${nicknameError ? 'border-destructive' : ''}`}
+                      autoComplete="username"
                     />
                     {nicknameError ? (
                       <p className="text-xs text-destructive">{nicknameError}</p>
