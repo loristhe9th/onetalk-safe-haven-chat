@@ -52,23 +52,6 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// OneTalk specific colors
-				'safe-green': 'hsl(var(--safe-green))',
-				'warm-orange': 'hsl(var(--warm-orange))',
-				'calm-purple': 'hsl(var(--calm-purple))',
-				'soft-blue': 'hsl(var(--soft-blue))',
-				'trust-teal': 'hsl(var(--trust-teal))',
-				'emergency-red': 'hsl(var(--emergency-red))',
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
-				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
