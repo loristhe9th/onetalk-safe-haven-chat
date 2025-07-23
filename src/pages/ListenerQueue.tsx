@@ -17,7 +17,7 @@ interface WaitingSession {
 }
 
 export default function ListenerQueue() {
-  const { profile, loading: authLoading } from useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [waitingSessions, setWaitingSessions] = useState<WaitingSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
