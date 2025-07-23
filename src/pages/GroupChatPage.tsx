@@ -4,9 +4,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { Send, ArrowLeft, Loader2, Users } from 'lucide-react';
+import Mascot from '@/components/ui/Mascot';
 
 // Định nghĩa kiểu dữ liệu cho tin nhắn nhóm
 interface GroupMessage {
@@ -90,6 +90,7 @@ export default function GroupChatPage() {
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
+          // Khi có tin nhắn mới, fetch lại tin nhắn đó kèm profile
           const fetchNewMessage = async () => {
              const { data, error } = await supabase
               .from('group_messages')
@@ -156,24 +157,22 @@ export default function GroupChatPage() {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex items-end gap-2 ${
+            className={`flex items-start gap-3 ${
               msg.sender_id === profile?.id ? 'justify-end' : 'justify-start'
             }`}
           >
             {/* Hiển thị avatar và nickname cho người khác */}
             {msg.sender_id !== profile?.id && (
-                <div className="flex flex-col items-center">
-                    <Avatar className="w-8 h-8">
-                        <AvatarFallback>{msg.profiles?.nickname?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-muted-foreground mt-1">{msg.profiles?.nickname}</span>
+                <div className="flex flex-col items-center shrink-0">
+                    <Mascot variant="happy" className="w-10 h-10" />
+                    <span className="text-xs text-muted-foreground mt-1 max-w-[60px] truncate">{msg.profiles?.nickname}</span>
                 </div>
             )}
             <div
               className={`max-w-xs md:max-w-md p-3 rounded-lg ${
                 msg.sender_id === profile?.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
+                  ? 'bg-primary text-primary-foreground rounded-br-none'
+                  : 'bg-muted rounded-bl-none'
               }`}
             >
               <p className="text-sm break-words">{msg.content}</p>
