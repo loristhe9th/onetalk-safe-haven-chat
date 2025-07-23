@@ -26,10 +26,7 @@ interface Topic {
   color: string;
 }
 
-// KHÔNG CẦN INTERFACE PROFILE Ở ĐÂY NỮA
-
 export default function ChatStart() {
-  // Lấy profile và trạng thái loading trực tiếp từ useAuth
   const { profile, loading: authLoading } = useAuth(); 
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -39,7 +36,6 @@ export default function ChatStart() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Chỉ cần fetch topics khi component được tạo
     const fetchTopics = async () => {
       try {
         const { data, error } = await supabase
@@ -57,8 +53,6 @@ export default function ChatStart() {
 
     fetchTopics();
   }, []);
-
-  // KHÔNG CẦN HÀM fetchProfile Ở ĐÂY NỮA
 
   const handleStartChat = async () => {
     if (!selectedTopic) {
@@ -84,11 +78,11 @@ export default function ChatStart() {
       const { data: session, error } = await supabase
         .from('chat_sessions')
         .insert({
-          seeker_id: profile.id, // Dùng profile.id trực tiếp từ useAuth
+          seeker_id: profile.id,
           topic_id: selectedTopic,
           status: 'waiting',
-          // is_emergency: isEmergency, // Cột này có thể không còn cần thiết
-          duration_minutes: 30
+          duration_minutes: 30,
+          description: description.trim(), // <-- THÊM DÒNG NÀY
         })
         .select()
         .single();
@@ -113,7 +107,6 @@ export default function ChatStart() {
     }
   };
 
-  // Thêm màn hình chờ trong lúc kiểm tra profile
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -196,58 +189,7 @@ export default function ChatStart() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Listener Type */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Choose your support type</CardTitle>
-              <CardDescription>
-                Different types of support are available based on your needs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RadioGroup value={listenerType} onValueChange={(value: "listener" | "expert") => setListenerType(value)}>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-4 rounded-lg border">
-                    <RadioGroupItem value="listener" id="listener" />
-                    <Label htmlFor="listener" className="flex-1 cursor-pointer">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4 text-green-500" />
-                            <span className="font-medium">Peer Listener</span>
-                            <Badge variant="secondary">Free</Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Caring volunteers who provide emotional support and active listening
-                          </div>
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center space-x-3 p-4 rounded-lg border opacity-50 cursor-not-allowed">
-                    <RadioGroupItem value="expert" id="expert" disabled />
-                    <Label htmlFor="expert" className="flex-1 cursor-not-allowed">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <Star className="w-4 h-4 text-yellow-500" />
-                            <span className="font-medium">Professional Expert</span>
-                            <Badge>Premium</Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Licensed counselors and therapists for professional guidance (Coming Soon)
-                          </div>
-                        </div>
-                      </div>
-                    </Label>
-                  </div>
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
-
+          
           {/* Description */}
           <Card>
             <CardHeader>
