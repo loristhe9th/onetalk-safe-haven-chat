@@ -41,6 +41,11 @@ export default function AIChatPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!import.meta.env.VITE_GEMINI_API_KEY) {
+      toast({ title: "Configuration Error", description: "Gemini API key is not set.", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
     if (newMessage.trim() === '' || !profile || isLoading) return;
 
     const userMessageContent = newMessage.trim();
