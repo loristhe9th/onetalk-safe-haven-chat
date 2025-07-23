@@ -12,7 +12,7 @@ import {
   Heart, 
   Users, 
   Star, 
-  BrainCircuit, // Icon mới cho AI
+  BrainCircuit,
   AlertTriangle,
   Loader2
 } from "lucide-react";
@@ -30,8 +30,8 @@ export default function ChatStart() {
   const navigate = useNavigate();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string>("");
-  // Thêm 'ai' vào kiểu dữ liệu và đặt làm mặc định
-  const [listenerType, setListenerType] = useState<"listener" | "expert" | "ai">("ai");
+  // Bỏ 'expert' khỏi kiểu dữ liệu vì nó đã bị vô hiệu hóa
+  const [listenerType, setListenerType] = useState<"listener" | "ai">("ai");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,14 +49,11 @@ export default function ChatStart() {
   }, []);
 
   const handleStartChat = async () => {
-    // === LOGIC MỚI: KIỂM TRA LỰA CHỌN CỦA NGƯỜI DÙNG ===
     if (listenerType === 'ai') {
-      // Nếu chọn AI, chuyển thẳng đến phòng chat AI
       navigate('/ai-chat');
       return;
     }
 
-    // Logic cũ để tìm Listener con người
     if (!selectedTopic) {
       toast({ variant: "destructive", title: "Please select a topic" });
       return;
@@ -114,7 +111,6 @@ export default function ChatStart() {
 
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="space-y-8">
-          {/* Emergency Notice */}
           <Card className="border-red-500/20 bg-red-500/5">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 text-red-500">
@@ -128,42 +124,45 @@ export default function ChatStart() {
             </CardHeader>
           </Card>
 
-          {/* Listener Type - Thêm lựa chọn AI */}
           <Card>
             <CardHeader>
               <CardTitle>Choose your support type</CardTitle>
               <CardDescription>Select who you would like to talk to.</CardDescription>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={listenerType} onValueChange={(value: "listener" | "expert" | "ai") => setListenerType(value)}>
+              <RadioGroup value={listenerType} onValueChange={(value: "listener" | "ai") => setListenerType(value)}>
                 <div className="space-y-4">
-                  {/* Lựa chọn AI Listener */}
                   <div className={`p-4 rounded-lg border-2 transition-all ${listenerType === 'ai' ? 'border-primary bg-primary/10' : 'border-border'}`}>
                     <div className="flex items-center space-x-3">
                       <RadioGroupItem value="ai" id="ai" />
                       <Label htmlFor="ai" className="flex-1 cursor-pointer">
-                        <div className="flex items-center space-x-2">
-                          <BrainCircuit className="w-5 h-5 text-primary" />
-                          <span className="font-semibold text-lg">AI Listener</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          Chat instantly with an empathetic AI, available 24/7.
-                        </div>
+                        <div className="flex items-center space-x-2"><BrainCircuit className="w-5 h-5 text-primary" /><span className="font-semibold text-lg">AI Listener</span></div>
+                        <div className="text-sm text-muted-foreground mt-1">Chat instantly with an empathetic AI, available 24/7.</div>
                       </Label>
                     </div>
                   </div>
                   
-                  {/* Lựa chọn Peer Listener */}
                   <div className={`p-4 rounded-lg border-2 transition-all ${listenerType === 'listener' ? 'border-primary bg-primary/10' : 'border-border'}`}>
                     <div className="flex items-center space-x-3">
                       <RadioGroupItem value="listener" id="listener" />
                       <Label htmlFor="listener" className="flex-1 cursor-pointer">
+                        <div className="flex items-center space-x-2"><Users className="w-5 h-5 text-green-500" /><span className="font-semibold text-lg">Peer Listener</span></div>
+                        <div className="text-sm text-muted-foreground mt-1">Connect with a caring volunteer from our community.</div>
+                      </Label>
+                    </div>
+                  </div>
+
+                  {/* === PHẦN ĐƯỢC CẬP NHẬT: VÔ HIỆU HÓA LỰA CHỌN EXPERT === */}
+                  <div className="p-4 rounded-lg border-2 transition-all opacity-50 cursor-not-allowed">
+                    <div className="flex items-center space-x-3">
+                      <RadioGroupItem value="expert" id="expert" disabled />
+                      <Label htmlFor="expert" className="flex-1 cursor-not-allowed">
                         <div className="flex items-center space-x-2">
-                          <Users className="w-5 h-5 text-green-500" />
-                          <span className="font-semibold text-lg">Peer Listener</span>
+                            <Star className="w-5 h-5 text-yellow-500" />
+                            <span className="font-semibold text-lg">Professional Expert</span>
                         </div>
                         <div className="text-sm text-muted-foreground mt-1">
-                          Connect with a caring volunteer from our community.
+                            Schedule a paid session with a licensed counselor. (Coming Soon)
                         </div>
                       </Label>
                     </div>
@@ -173,7 +172,6 @@ export default function ChatStart() {
             </CardContent>
           </Card>
 
-          {/* Các Card Topic và Description chỉ hiện khi chọn Peer Listener */}
           {listenerType === 'listener' && (
             <>
               <Card>
@@ -200,7 +198,7 @@ export default function ChatStart() {
                 <CardHeader>
                   <CardTitle>Tell us more (optional)</CardTitle>
                   <CardDescription>Share more details to help us match you better</CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                   <Textarea placeholder="Describe what's on your mind..." value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="resize-none" />
                 </CardContent>
@@ -208,7 +206,6 @@ export default function ChatStart() {
             </>
           )}
 
-          {/* Start Button */}
           <div className="flex justify-center pt-4">
             <Button 
               onClick={handleStartChat} 
