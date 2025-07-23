@@ -24,6 +24,7 @@ import ListenerOnboardingPage from "./pages/ListenerOnboardingPage";
 import ListenerProfilePage from "./pages/ListenerProfilePage";
 import GroupRoomsListPage from "./pages/GroupRoomsListPage";
 import GroupChatPage from "./pages/GroupChatPage";
+import AIChatPage from "./pages/AIChatPage";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +53,8 @@ const AppRoutes = () => {
       <Route path="/listener/onboarding" element={<Layout><ListenerOnboardingPage /></Layout>} />
       <Route path="/profile/:nickname" element={<Layout><ListenerProfilePage /></Layout>} />
       <Route path="/group-chats" element={<Layout><GroupRoomsListPage /></Layout>} />
-      <Route path="/group-chat/:roomId" element={<Layout><GroupChatPage /></Layout>} />
+      <Route path="/group-chat/:roomId" element={<Layout><GroupChatPage /></Layout>} 
+      <Route path="/ai-chat" element={<Layout><AIChatPage /></Layout>} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
