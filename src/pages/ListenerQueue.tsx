@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Users, MessageSquareText, Clock } from "lucide-react";
+import { Loader2, Users, MessageSquareText, Clock, ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 
 // Định nghĩa kiểu dữ liệu cho một phiên chat đang chờ
@@ -17,7 +17,7 @@ interface WaitingSession {
 }
 
 export default function ListenerQueue() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, loading: authLoading } from useAuth();
   const navigate = useNavigate();
   const [waitingSessions, setWaitingSessions] = useState<WaitingSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,16 +60,13 @@ export default function ListenerQueue() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessions', filter: 'status=eq.waiting' },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            // Thêm session mới vào danh sách
             const newSession = payload.new as WaitingSession;
-            // Cần fetch lại để có topic name
             const fetchFullNewSession = async () => {
               const { data } = await supabase.from('chat_sessions').select('*, topics(name)').eq('id', newSession.id).single();
               if (data) setWaitingSessions(prev => [...prev, data as WaitingSession]);
             }
             fetchFullNewSession();
           } else if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
-            // Xóa session khỏi danh sách nếu nó không còn 'waiting' nữa
             const oldSessionId = payload.old.id;
             setWaitingSessions(prev => prev.filter(s => s.id !== oldSessionId));
           }
@@ -83,9 +80,10 @@ export default function ListenerQueue() {
 
   const handleClaimSession = async (sessionId: string) => {
     if (!profile) return;
-    setClaimingId(sessionId); // Hiển thị loading cho đúng nút
+    setClaimingId(sessionId);
 
     try {
+      // === SỬA LỖI Ở ĐÂY: GỌI ĐÚNG HÀM 'claim_session' ===
       const { data: success, error } = await supabase.rpc('claim_session', {
         session_id_to_claim: sessionId,
         claiming_listener_id: profile.id
@@ -98,7 +96,6 @@ export default function ListenerQueue() {
         navigate(`/chat/session/${sessionId}`);
       } else {
         toast({ title: "Session Claimed", description: "Another listener has already taken this session.", variant: "destructive" });
-        // Cập nhật lại danh sách để loại bỏ session đã bị nhận
         setWaitingSessions(prev => prev.filter(s => s.id !== sessionId));
       }
     } catch (error: any) {
