@@ -4,7 +4,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { Send, LogOut, Loader2, Clock, PlusCircle } from 'lucide-react';
 import Mascot from '@/components/ui/Mascot';
@@ -53,6 +52,12 @@ export default function ChatSessionPage() {
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isTyping, setIsTyping] = useState(false);
+
+  // === KHAI BÁO STATE BỊ THIẾU NẰM Ở ĐÂY ===
+  const [showExtensionModal, setShowExtensionModal] = useState(false);
+  const [extensionRequest, setExtensionRequest] = useState<{ minutes: number; price: number } | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,12 +69,12 @@ export default function ChatSessionPage() {
     if (!sessionId || !sessionInfo || sessionInfo.status === 'completed') return;
     await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
     if (showToast) {
-        toast({ title: "Chat Ended", description: "The session has been completed." });
+      toast({ title: "Chat Ended", description: "The session has been completed." });
     }
     if (profile?.id === sessionInfo.seeker_id) {
-        navigate(`/rate/${sessionId}`);
+      navigate(`/rate/${sessionId}`);
     } else {
-        navigate('/dashboard');
+      navigate('/dashboard');
     }
   }, [sessionId, profile, sessionInfo, navigate]);
 
@@ -132,6 +137,11 @@ export default function ChatSessionPage() {
           setSessionInfo(prev => prev ? { ...prev, extended_duration_minutes: newExtendedDuration } : null);
           toast({ title: "Session Extended!", description: `${addedMinutes} minutes have been added.` });
         }
+      })
+      .on('broadcast', { event: 'extension-request' }, (payload) => {
+          if (profile?.id !== sessionInfo?.seeker_id) {
+            setExtensionRequest(payload.payload.package);
+          }
       })
       .on('broadcast', { event: 'typing' }, (payload) => { if (payload.payload.senderId !== profile?.id) setIsTyping(true); })
       .on('broadcast', { event: 'stopped-typing' }, (payload) => { if (payload.payload.senderId !== profile?.id) setIsTyping(false); })
@@ -234,7 +244,6 @@ export default function ChatSessionPage() {
         <div ref={messagesEndRef} />
       </main>
 
-      {/* === PHẦN FOOTER ĐÃ ĐƯỢC ĐẢM BẢO CÓ MẶT === */}
       <footer className="p-4 border-t bg-background shrink-0">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Input value={newMessage} onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }} placeholder="Type a message..." autoComplete="off" />
