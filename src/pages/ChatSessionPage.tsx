@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth, Profile } from '@/hooks/useAuth'; // Import cả Profile type
+import { useAuth, Profile } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ interface Message {
 
 interface SessionInfo {
   seeker_id: string;
-  listener_id: string; // Thêm listener_id để biết người đối diện là ai
+  listener_id: string;
   created_at: string;
   duration_minutes: number;
   extended_duration_minutes: number;
@@ -53,10 +53,7 @@ export default function ChatSessionPage() {
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  
-  // === THÊM STATE ĐỂ LƯU PROFILE CỦA NGƯỜI ĐỐI DIỆN ===
   const [otherUser, setOtherUser] = useState<Profile | null>(null);
-
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [extensionRequest, setExtensionRequest] = useState<{ minutes: number; price: number } | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -87,9 +84,19 @@ export default function ChatSessionPage() {
     
     const fetchInitialData = async () => {
       setLoading(true);
+
+      // === SỬA LỖI Ở ĐÂY: GỌI HÀM LẤY GIỜ SERVER ===
+      const { data: serverNow, error: timeError } = await supabase.rpc('get_server_time');
+      if (timeError) {
+          toast({ title: "Error", description: "Could not sync with server time.", variant: "destructive" });
+          navigate('/dashboard');
+          return;
+      }
+      const now = new Date(serverNow).getTime();
+
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
-        .select('*, seeker_id, listener_id') // Lấy cả listener_id
+        .select('*, seeker_id, listener_id')
         .eq('id', sessionId)
         .single();
 
@@ -100,7 +107,6 @@ export default function ChatSessionPage() {
       }
       setSessionInfo(sessionData as SessionInfo);
 
-      // === TÌM ID CỦA NGƯỜI ĐỐI DIỆN VÀ LẤY PROFILE CỦA HỌ ===
       const otherUserId = sessionData.seeker_id === profile.id ? sessionData.listener_id : sessionData.seeker_id;
       if (otherUserId) {
         const { data: otherUserData } = await supabase.from('profiles').select('*').eq('id', otherUserId).single();
@@ -112,7 +118,8 @@ export default function ChatSessionPage() {
 
       const startTime = new Date(sessionData.created_at).getTime();
       const totalDurationSeconds = (sessionData.duration_minutes + (sessionData.extended_duration_minutes || 0)) * 60;
-      const now = new Date().getTime();
+      
+      // === SỬA LỖI Ở ĐÂY: SỬ DỤNG GIỜ SERVER ĐỂ TÍNH TOÁN ===
       const elapsedSeconds = Math.floor((now - startTime) / 1000);
       setTimeLeft(totalDurationSeconds - elapsedSeconds);
       
@@ -138,23 +145,13 @@ export default function ChatSessionPage() {
   
   // useEffect cho Realtime
   useEffect(() => {
-    if (!sessionId || !otherUser) return; // Chỉ chạy khi đã có thông tin người đối diện
-    
-    const channel = supabase
-      .channel(`chat-session-${sessionId}`)
+    if (!sessionId || !otherUser) return;
+    const channel = supabase.channel(`chat-session-${sessionId}`)
       .on('postgres_changes', { event: 'INSERT', table: 'messages', filter: `session_id=eq.${sessionId}`}, 
         (payload) => {
-          // === LOGIC MỚI: XÂY DỰNG TIN NHẮN MÀ KHÔNG CẦN FETCH LẠI ===
           const newMessageData = payload.new as Omit<Message, 'profiles'>;
-          
-          if (newMessageData.sender_id === profile?.id) return; // Bỏ qua tin nhắn của chính mình
-
-          // Tạo đối tượng tin nhắn hoàn chỉnh
-          const fullMessage: Message = {
-            ...newMessageData,
-            profiles: { nickname: otherUser.nickname }
-          };
-          
+          if (newMessageData.sender_id === profile?.id) return;
+          const fullMessage: Message = { ...newMessageData, profiles: { nickname: otherUser.nickname } };
           setMessages((prev) => [...prev, fullMessage]);
         }
       )
@@ -204,9 +201,8 @@ export default function ChatSessionPage() {
     supabase.channel(`chat-session-${sessionId}`).send({ type: 'broadcast', event: 'stopped-typing', payload: { senderId: profile?.id } });
     
     const content = newMessage.trim();
-    const tempId = Math.random().toString(); // Tạo ID tạm thời
+    const tempId = Math.random().toString();
     
-    // Thêm tin nhắn vào UI ngay lập tức
     const tempMessage: Message = {
       id: tempId,
       content,
@@ -217,12 +213,10 @@ export default function ChatSessionPage() {
     setMessages(prev => [...prev, tempMessage]);
     setNewMessage('');
 
-    // Gửi tin nhắn lên database
     const { error } = await supabase.from('messages').insert({ content, session_id: sessionId, sender_id: profile.id });
     
     if (error) {
       toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
-      // Xóa tin nhắn tạm nếu gửi lỗi
       setMessages(prev => prev.filter(m => m.id !== tempId));
       setNewMessage(content);
     }
