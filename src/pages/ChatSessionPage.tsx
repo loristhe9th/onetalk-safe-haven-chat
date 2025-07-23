@@ -27,7 +27,6 @@ interface Message {
   profiles: { nickname: string };
 }
 
-// Cập nhật để có cả extended_duration_minutes
 interface SessionInfo {
   seeker_id: string;
   created_at: string;
@@ -57,11 +56,6 @@ export default function ChatSessionPage() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // === THÊM STATE CHO LUỒNG GIA HẠN ===
-  const [showExtensionModal, setShowExtensionModal] = useState(false);
-  const [extensionRequest, setExtensionRequest] = useState<{ minutes: number; price: number } | null>(null);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
@@ -70,12 +64,12 @@ export default function ChatSessionPage() {
     if (!sessionId || !sessionInfo || sessionInfo.status === 'completed') return;
     await supabase.from('chat_sessions').update({ status: 'completed' }).eq('id', sessionId);
     if (showToast) {
-      toast({ title: "Chat Ended", description: "The session has been completed." });
+        toast({ title: "Chat Ended", description: "The session has been completed." });
     }
     if (profile?.id === sessionInfo.seeker_id) {
-      navigate(`/rate/${sessionId}`);
+        navigate(`/rate/${sessionId}`);
     } else {
-      navigate('/dashboard');
+        navigate('/dashboard');
     }
   }, [sessionId, profile, sessionInfo, navigate]);
 
@@ -118,7 +112,13 @@ export default function ChatSessionPage() {
   useEffect(() => {
     if (!sessionId) return;
     const channel = supabase.channel(`chat-session-${sessionId}`)
-      .on('postgres_changes', { event: 'INSERT', table: 'messages', filter: `session_id=eq.${sessionId}`}, (payload) => { /* ... */ })
+      .on('postgres_changes', { event: 'INSERT', table: 'messages', filter: `session_id=eq.${sessionId}`}, (payload) => {
+        const fetchNewMessage = async () => {
+           const { data } = await supabase.from('messages').select('*, profiles(nickname)').eq('id', payload.new.id).single();
+          if (data) setMessages((prev) => [...prev, data as Message]);
+        }
+        fetchNewMessage();
+      })
       .on('postgres_changes', { event: 'UPDATE', table: 'chat_sessions', filter: `id=eq.${sessionId}`}, (payload) => {
         const newStatus = payload.new.status;
         const newExtendedDuration = payload.new.extended_duration_minutes;
@@ -133,16 +133,30 @@ export default function ChatSessionPage() {
           toast({ title: "Session Extended!", description: `${addedMinutes} minutes have been added.` });
         }
       })
-      .on('broadcast', { event: 'extension-request' }, (payload) => {
-          if (profile?.id !== sessionInfo?.seeker_id) {
-            setExtensionRequest(payload.payload.package);
-          }
-      })
-      .on('broadcast', { event: 'typing' }, (payload) => { /* ... */ })
-      .on('broadcast', { event: 'stopped-typing' }, (payload) => { /* ... */ })
+      .on('broadcast', { event: 'typing' }, (payload) => { if (payload.payload.senderId !== profile?.id) setIsTyping(true); })
+      .on('broadcast', { event: 'stopped-typing' }, (payload) => { if (payload.payload.senderId !== profile?.id) setIsTyping(false); })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [sessionId, profile?.id, handleEndChat, sessionInfo]);
+
+  const handleTyping = () => {
+    const channel = supabase.channel(`chat-session-${sessionId}`);
+    channel.send({ type: 'broadcast', event: 'typing', payload: { senderId: profile?.id } });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      channel.send({ type: 'broadcast', event: 'stopped-typing', payload: { senderId: profile?.id } });
+    }, 2000);
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newMessage.trim() === '' || !profile || !sessionId) return;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    supabase.channel(`chat-session-${sessionId}`).send({ type: 'broadcast', event: 'stopped-typing', payload: { senderId: profile?.id } });
+    const content = newMessage.trim();
+    setNewMessage('');
+    await supabase.from('messages').insert({ content, session_id: sessionId, sender_id: profile.id });
+  };
 
   const handleRequestExtension = (minutes: number, price: number) => {
     setShowExtensionModal(false);
@@ -165,9 +179,6 @@ export default function ChatSessionPage() {
     setExtensionRequest(null);
   };
 
-  const handleTyping = () => { /* ... */ };
-  const handleSendMessage = async (e: React.FormEvent) => { /* ... */ };
-
   if (loading || timeLeft === null) {
     return ( <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> );
   }
@@ -187,7 +198,6 @@ export default function ChatSessionPage() {
                 <Clock className="w-5 h-5" />
                 <span>{formatTime(timeLeft)}</span>
             </div>
-            {/* Nút gia hạn, chỉ Seeker thấy khi sắp hết giờ */}
             {profile?.id === sessionInfo?.seeker_id && timeLeft < 300 && (
                 <Button variant="outline" size="sm" onClick={() => setShowExtensionModal(true)}>
                     <PlusCircle className="w-4 h-4 mr-2" />
@@ -201,10 +211,38 @@ export default function ChatSessionPage() {
         </div>
       </header>
 
-      <main> {/* ... JSX của main không đổi ... */} </main>
-      <footer> {/* ... JSX của footer không đổi ... */} </footer>
+      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex items-end gap-2 ${ msg.sender_id === profile?.id ? 'justify-end' : 'justify-start' }`}>
+            {msg.sender_id !== profile?.id && (
+                <Mascot variant="listening" className="w-8 h-8" />
+            )}
+            <div className={`max-w-xs md:max-w-md p-3 rounded-lg ${ msg.sender_id === profile?.id ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-muted rounded-bl-none' }`}>
+              <p className="text-sm break-words">{msg.content}</p>
+              <p className="text-xs opacity-70 mt-1 text-right">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </div>
+        ))}
+        {isTyping && (
+          <div className="flex items-end gap-2 justify-start">
+              <Mascot variant="listening" className="w-8 h-8 opacity-70" />
+              <div className="p-3 rounded-lg bg-muted animate-pulse">
+                  <p className="text-sm italic text-muted-foreground">is typing...</p>
+              </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </main>
 
-      {/* Modal cho Seeker để chọn gói gia hạn */}
+      {/* === PHẦN FOOTER ĐÃ ĐƯỢC ĐẢM BẢO CÓ MẶT === */}
+      <footer className="p-4 border-t bg-background shrink-0">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+          <Input value={newMessage} onChange={(e) => { setNewMessage(e.target.value); handleTyping(); }} placeholder="Type a message..." autoComplete="off" />
+          <Button type="submit" size="icon" disabled={!newMessage.trim()}><Send className="w-4 h-4" /></Button>
+        </form>
+      </footer>
+
+      {/* Modals cho luồng gia hạn */}
       <AlertDialog open={showExtensionModal} onOpenChange={setShowExtensionModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -219,7 +257,6 @@ export default function ChatSessionPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal cho Listener để chấp nhận yêu cầu */}
       <AlertDialog open={!!extensionRequest}>
         <AlertDialogContent>
           <AlertDialogHeader>
