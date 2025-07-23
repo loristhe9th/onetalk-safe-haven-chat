@@ -198,7 +198,7 @@ export default function ChatStart() {
                 <CardHeader>
                   <CardTitle>Tell us more (optional)</CardTitle>
                   <CardDescription>Share more details to help us match you better</CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                   <Textarea placeholder="Describe what's on your mind..." value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="resize-none" />
                 </CardContent>
