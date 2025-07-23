@@ -53,7 +53,7 @@ const AppRoutes = () => {
       <Route path="/listener/onboarding" element={<Layout><ListenerOnboardingPage /></Layout>} />
       <Route path="/profile/:nickname" element={<Layout><ListenerProfilePage /></Layout>} />
       <Route path="/group-chats" element={<Layout><GroupRoomsListPage /></Layout>} />
-      <Route path="/group-chat/:roomId" element={<Layout><GroupChatPage /></Layout>} 
+      <Route path="/group-chat/:roomId" element={<Layout><GroupChatPage /></Layout>} />
       <Route path="/ai-chat" element={<Layout><AIChatPage /></Layout>} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
