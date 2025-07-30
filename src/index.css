@@ -4,37 +4,39 @@
 
 @layer base {
   :root {
-    /* Bảng màu OneTalk UI Refresh - Dark Mode */
-    --background: 270 25% 11%;      /* Màu nền tối nhất #1C1424 */
-    --foreground: 264 30% 88%;      /* Màu chữ chính #E5E1EE */
+    /* Bảng màu OneTalk Tím Tươi Sáng - Dark Mode */
+    --background: 240 35% 13%;      /* Nền tím than đậm #1A1A2E */
+    --foreground: 240 100% 94%;     /* Chữ màu lavender rất nhạt #E0E0FF */
 
-    --card: 270 25% 15%;            /* Nền card tối hơn một chút */
-    --card-foreground: 264 30% 88%;
+    --card: 240 25% 20%;            /* Nền card tối hơn một chút #24243E */
+    --card-foreground: 240 100% 94%;
  
-    --popover: 270 25% 15%;
-    --popover-foreground: 264 30% 88%;
+    --popover: 240 25% 18%;
+    --popover-foreground: 240 100% 94%;
  
-    --primary: 271 11% 42%;         /* Button chính #6C5B7B */
-    --primary-foreground: 0 0% 100%; /* Chữ trắng trên button chính */
+    --primary: 255 100% 65%;        /* Màu primary tím sáng #7C4DFF */
+    --primary-foreground: 255 100% 98%; /* Chữ trắng trên nền primary */
  
-    --secondary: 271 11% 30%;       /* Button phụ */
-    --secondary-foreground: 264 30% 88%;
+    --secondary: 240 25% 30%;       /* Button phụ */
+    --secondary-foreground: 240 100% 94%;
  
-    --muted: 271 11% 25%;
-    --muted-foreground: 271 11% 65%;
+    --muted: 240 25% 25%;
+    --muted-foreground: 240 20% 65%;
  
-    --accent: 279 26% 71%;          /* Màu nhấn #BBA0CA */
-    --accent-foreground: 270 25% 11%;
+    --accent: 255 100% 75%;          /* Màu nhấn sáng hơn một chút */
+    --accent-foreground: 240 35% 13%;
  
-    --destructive: 352 45% 62%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
  
-    --border: 255 4% 35%;           /* Border sáng hơn một chút: rgba(255,255,255,0.1) */
-    --input: 271 11% 28%;
-    --ring: 271 11% 42%;
+    --border: 240 25% 30%;
+    --input: 240 25% 28%;
+    --ring: 255 100% 65%;
  
-    --radius: 0.75rem; /* Tăng bo góc lên 12px */
+    --radius: 0.75rem;
   }
+
+  /* Xóa khối .dark đi vì chúng ta chỉ dùng một theme duy nhất */
 }
  
 @layer base {
@@ -42,7 +44,7 @@
     @apply border-border;
   }
   body {
-    /* Thêm gradient cho nền trang */
-    @apply bg-gradient-to-br from-[#1C1424] to-[#2E1D3B] text-foreground;
+    /* Áp dụng nền gradient nhẹ nhàng */
+    @apply bg-gradient-to-br from-background to-[#161625] text-foreground;
   }
 }
